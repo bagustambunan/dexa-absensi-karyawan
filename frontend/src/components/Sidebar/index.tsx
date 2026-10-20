@@ -10,11 +10,6 @@ const EMPLOYEE_PORTAL_PATH = "/employee-portal";
 
 const employeeMenuItems: MenuProps["items"] = [
   {
-    key: `${EMPLOYEE_PORTAL_PATH}/profile`,
-    icon: <UserOutlined />,
-    label: <Link to={`${EMPLOYEE_PORTAL_PATH}/profile`}>Profil Karyawan</Link>,
-  },
-  {
     key: `${EMPLOYEE_PORTAL_PATH}/attendance`,
     icon: <ClockCircleOutlined />,
     label: <Link to={`${EMPLOYEE_PORTAL_PATH}/attendance`}>Absen</Link>,
@@ -28,6 +23,11 @@ const employeeMenuItems: MenuProps["items"] = [
       </Link>
     ),
   },
+  {
+    key: `${EMPLOYEE_PORTAL_PATH}/profile`,
+    icon: <UserOutlined />,
+    label: <Link to={`${EMPLOYEE_PORTAL_PATH}/profile`}>Profil Karyawan</Link>,
+  },
 ];
 
 function Sidebar() {
@@ -38,7 +38,17 @@ function Sidebar() {
       : pathname;
 
   return (
-    <Layout.Sider width={240}>
+    <Layout.Sider
+      width={240}
+      style={{
+        position: "fixed",
+        insetInlineStart: 0,
+        top: 0,
+        bottom: 0,
+        height: "100vh",
+        overflow: "auto",
+      }}
+    >
       <Menu
         mode="inline"
         style={{ height: "100%", borderInlineEnd: 0 }}

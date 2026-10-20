@@ -4,6 +4,7 @@ import AuthLayout from "./components/AuthLayout";
 import { createBrowserRouter } from "react-router";
 import EmployeeAttendance from "./pages/EmployeePortal/EmployeeAttendance";
 import EmployeeAttendanceSummary from "./pages/EmployeePortal/EmployeeAttendanceSummary";
+import EmployeeProfile from "./pages/EmployeePortal/EmployeeProfile";
 
 export const router = createBrowserRouter([
   {
@@ -18,6 +19,7 @@ export const router = createBrowserRouter([
           { index: true, element: <EmployeeAttendance /> },
           { path: "attendance", element: <EmployeeAttendance /> },
           { path: "attendance-summary", element: <EmployeeAttendanceSummary /> },
+          { path: "profile", element: <EmployeeProfile /> },
         ],
       },
       { path: "*", element: <Error404Page /> },
