@@ -6,6 +6,7 @@ import EmployeeAttendance from "./pages/EmployeePortal/EmployeeAttendance";
 import EmployeeAttendanceSummary from "./pages/EmployeePortal/EmployeeAttendanceSummary";
 import EmployeeProfile from "./pages/EmployeePortal/EmployeeProfile";
 import EmployeeManagement from "./pages/HrdPortal/EmployeeManagement";
+import AttendanceMonitoring from "./pages/HrdPortal/AttendanceMonitoring";
 
 export const router = createBrowserRouter([
   {
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <EmployeeManagement /> },
           { path: "employees", element: <EmployeeManagement /> },
+          { path: "attendance", element: <AttendanceMonitoring /> },
         ],
       },
       { path: "*", element: <Error404Page /> },

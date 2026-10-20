@@ -1,5 +1,6 @@
 import {
   BarChartOutlined,
+  CalendarOutlined,
   ClockCircleOutlined,
   LogoutOutlined,
   TeamOutlined,
@@ -47,6 +48,11 @@ const hrdMenuItems: MenuProps["items"] = [
     key: `${HRD_PORTAL_PATH}/employees`,
     icon: <TeamOutlined />,
     label: <Link to={`${HRD_PORTAL_PATH}/employees`}>Kelola Karyawan</Link>,
+  },
+  {
+    key: `${HRD_PORTAL_PATH}/attendance`,
+    icon: <CalendarOutlined />,
+    label: <Link to={`${HRD_PORTAL_PATH}/attendance`}>Monitoring Absensi</Link>,
   },
 ];
 
