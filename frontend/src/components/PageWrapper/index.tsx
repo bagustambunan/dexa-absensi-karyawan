@@ -13,7 +13,7 @@ function PageWrapper({
   return (
     <Layout.Content style={{ padding: "24px" }}>
       <div style={{ marginBottom: "24px" }}>
-        <Typography.Title level={2}>{title}</Typography.Title>
+        <h2 className="page-title">{title}</h2>
         {subtitle && (
           <Typography.Text type="secondary">{subtitle}</Typography.Text>
         )}

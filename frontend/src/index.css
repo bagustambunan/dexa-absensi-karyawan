@@ -35,3 +35,9 @@ body {
 .bg-dimmed {
   background-color: #f3f3f3;
 }
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
