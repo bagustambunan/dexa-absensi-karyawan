@@ -1,74 +1,48 @@
-import React from 'react';
-import { LaptopOutlined, NotificationOutlined, UserOutlined } from '@ant-design/icons';
-import type { MenuProps } from 'antd';
-import { Breadcrumb, Layout, Menu, theme } from 'antd';
+import React from "react";
+import {
+  BarChartOutlined,
+  ClockCircleOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
+import type { MenuProps } from "antd";
+import { Layout, Menu } from "antd";
+import { Outlet } from "react-router";
 
-const { Header, Content, Footer, Sider } = Layout;
-
-const items1: MenuProps['items'] = ['1', '2', '3'].map((key) => ({
-  key,
-  label: `nav ${key}`,
-}));
-
-const items2: MenuProps['items'] = [UserOutlined, LaptopOutlined, NotificationOutlined].map(
-  (icon, index) => {
-    const key = String(index + 1);
-
-    return {
-      key: `sub${key}`,
-      icon: React.createElement(icon),
-      label: `subnav ${key}`,
-      children: Array.from({ length: 4 }).map((_, j) => {
-        const subKey = index * 4 + j + 1;
-        return {
-          key: subKey,
-          label: `option${subKey}`,
-        };
-      }),
-    };
+const employeeMenuItems: MenuProps["items"] = [
+  {
+    key: "employee-profile",
+    icon: <UserOutlined />,
+    label: "Profil Karyawan",
   },
-);
+  {
+    key: "employee-attendance",
+    icon: <ClockCircleOutlined />,
+    label: "Absen",
+  },
+  {
+    key: "employee-attendance-summary",
+    icon: <BarChartOutlined />,
+    label: "Summary Absen",
+  },
+];
 
 const App: React.FC = () => {
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
-
-  const currentYear = new Date().getFullYear();
-
   return (
     <Layout>
-      <Header style={{ display: 'flex', alignItems: 'center' }}>
-        <div className="demo-logo" />
-        <Menu
-          theme="dark"
-          mode="horizontal"
-          defaultSelectedKeys={['2']}
-          items={items1}
-          style={{ flex: 1, minWidth: 0 }}
-        />
-      </Header>
-      <div style={{ padding: '0 48px' }}>
-        <Breadcrumb
-          style={{ margin: '16px 0' }}
-          items={[{ title: 'Home' }, { title: 'List' }, { title: 'App' }]}
-        />
-        <Layout
-          style={{ padding: '24px 0', background: colorBgContainer, borderRadius: borderRadiusLG }}
-        >
-          <Sider style={{ background: colorBgContainer }} width={200}>
-            <Menu
-              mode="inline"
-              defaultSelectedKeys={['1']}
-              defaultOpenKeys={['sub1']}
-              style={{ height: '100%' }}
-              items={items2}
-            />
-          </Sider>
-          <Content style={{ padding: '0 24px', minHeight: 280 }}>Content</Content>
+      <Layout>
+        <Layout.Sider width={240}>
+          <Menu
+            mode="inline"
+            defaultSelectedKeys={["employee-attendance"]}
+            defaultOpenKeys={["employee-attendance"]}
+            style={{ height: "100%", borderInlineEnd: 0 }}
+            items={employeeMenuItems}
+          />
+        </Layout.Sider>
+        <Layout style={{ padding: "0 24px 24px" }}>
+          <Outlet />
         </Layout>
-      </div>
-      <Footer style={{ textAlign: 'center' }}>Ant Design ©{currentYear} Created by Ant UED</Footer>
+      </Layout>
     </Layout>
   );
 };
