@@ -5,6 +5,7 @@ import { createBrowserRouter } from "react-router";
 import EmployeeAttendance from "./pages/EmployeePortal/EmployeeAttendance";
 import EmployeeAttendanceSummary from "./pages/EmployeePortal/EmployeeAttendanceSummary";
 import EmployeeProfile from "./pages/EmployeePortal/EmployeeProfile";
+import EmployeeManagement from "./pages/HrdPortal/EmployeeManagement";
 
 export const router = createBrowserRouter([
   {
@@ -20,6 +21,14 @@ export const router = createBrowserRouter([
           { path: "attendance", element: <EmployeeAttendance /> },
           { path: "attendance-summary", element: <EmployeeAttendanceSummary /> },
           { path: "profile", element: <EmployeeProfile /> },
+        ],
+      },
+      {
+        path: "hrd-portal",
+        element: <AuthLayout portal="hrd" />,
+        children: [
+          { index: true, element: <EmployeeManagement /> },
+          { path: "employees", element: <EmployeeManagement /> },
         ],
       },
       { path: "*", element: <Error404Page /> },

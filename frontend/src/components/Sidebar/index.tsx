@@ -2,6 +2,7 @@ import {
   BarChartOutlined,
   ClockCircleOutlined,
   LogoutOutlined,
+  TeamOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import {
@@ -17,6 +18,7 @@ import {
 import { Link, useLocation } from "react-router";
 
 const EMPLOYEE_PORTAL_PATH = "/employee-portal";
+const HRD_PORTAL_PATH = "/hrd-portal";
 
 const employeeMenuItems: MenuProps["items"] = [
   {
@@ -40,11 +42,24 @@ const employeeMenuItems: MenuProps["items"] = [
   },
 ];
 
-function Sidebar() {
+const hrdMenuItems: MenuProps["items"] = [
+  {
+    key: `${HRD_PORTAL_PATH}/employees`,
+    icon: <TeamOutlined />,
+    label: <Link to={`${HRD_PORTAL_PATH}/employees`}>Kelola Karyawan</Link>,
+  },
+];
+
+function Sidebar({ portal = "employee" }: { portal?: "employee" | "hrd" }) {
   const { pathname } = useLocation();
+  const isHrdPortal = portal === "hrd";
+  const portalPath = isHrdPortal ? HRD_PORTAL_PATH : EMPLOYEE_PORTAL_PATH;
+  const defaultPath = isHrdPortal
+    ? `${HRD_PORTAL_PATH}/employees`
+    : `${EMPLOYEE_PORTAL_PATH}/attendance`;
   const selectedPath =
-    pathname === EMPLOYEE_PORTAL_PATH || pathname === `${EMPLOYEE_PORTAL_PATH}/`
-      ? `${EMPLOYEE_PORTAL_PATH}/attendance`
+    pathname === portalPath || pathname === `${portalPath}/`
+      ? defaultPath
       : pathname;
 
   return (
@@ -62,7 +77,7 @@ function Sidebar() {
     >
       <Flex vertical style={{ height: "100%" }}>
         <Typography.Title level={4} style={{ margin: 0, padding: 24 }}>
-          Portal Karyawan
+          {isHrdPortal ? "Portal HRD" : "Portal Karyawan"}
         </Typography.Title>
 
         <Menu
@@ -73,7 +88,7 @@ function Sidebar() {
             overflowY: "auto",
             borderInlineEnd: 0,
           }}
-          items={employeeMenuItems}
+          items={isHrdPortal ? hrdMenuItems : employeeMenuItems}
           selectedKeys={[selectedPath]}
         />
 
@@ -83,8 +98,10 @@ function Sidebar() {
           style={{ width: "100%", padding: 16 }}
         >
           <Space>
-            <Avatar>BT</Avatar>
-            <Typography.Text strong>Bagus Tambunan</Typography.Text>
+            <Avatar>{isHrdPortal ? "HR" : "BT"}</Avatar>
+            <Typography.Text strong>
+              {isHrdPortal ? "Admin HRD" : "Bagus Tambunan"}
+            </Typography.Text>
           </Space>
           <Button danger block icon={<LogoutOutlined />}>
             Logout
