@@ -17,6 +17,7 @@ import {
   Typography,
   type TableProps,
 } from "antd";
+import { Link } from "react-router";
 import PageWrapper from "../../../components/PageWrapper";
 
 type Employee = {
@@ -68,7 +69,11 @@ const columns: TableProps<Employee>["columns"] = [
   {
     title: "Aksi",
     key: "action",
-    render: () => <Button icon={<EditOutlined />}>Edit</Button>,
+    render: (_, employee) => (
+      <Link to={`/hrd-portal/employees/${employee.id}/edit`}>
+        <Button icon={<EditOutlined />}>Edit</Button>
+      </Link>
+    ),
   },
 ];
 
@@ -90,9 +95,11 @@ function EmployeeManagement() {
         style={{ marginTop: 16 }}
         title="Daftar Karyawan"
         extra={
-          <Button type="primary" icon={<UserAddOutlined />}>
-            Tambah Karyawan
-          </Button>
+          <Link to="/hrd-portal/employees/new">
+            <Button type="primary" icon={<UserAddOutlined />}>
+              Tambah Karyawan
+            </Button>
+          </Link>
         }
       >
         <Space orientation="vertical" size={16} style={{ width: "100%" }}>
