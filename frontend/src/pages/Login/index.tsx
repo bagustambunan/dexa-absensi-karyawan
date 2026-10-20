@@ -1,4 +1,5 @@
 import { Button, Card, Form, Input } from 'antd'
+import { LoginOutlined } from "@ant-design/icons"
 
 export default function index() {
   return (
@@ -11,7 +12,7 @@ export default function index() {
           <Input.Password />
         </Form.Item>
         <Form.Item>
-          <Button type="primary">
+          <Button type="primary" icon={<LoginOutlined />} iconPlacement="end" className='full-width'>
             Login
           </Button>
         </Form.Item>

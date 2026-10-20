@@ -4,5 +4,10 @@ body {
 }
 
 .login-card {
-  max-width: 40vw;
+  width: 30vw;
+  min-width: 400px;
+}
+
+.full-width {
+  width: 100%;
 }
