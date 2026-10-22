@@ -4,6 +4,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller.ts';
 import { AppService } from './app.service.ts';
 import { AuthModule } from './auth/auth.module.ts';
+import { EmployeesModule } from './employees/employees.module.ts';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { AuthModule } from './auth/auth.module.ts';
       envFilePath: '../.env',
     }),
     AuthModule,
+    EmployeesModule,
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
