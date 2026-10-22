@@ -34,7 +34,7 @@ const employeeFields: FindOptionsSelect<Employee> = {
   isActive: true,
 };
 
-@Controller('api/admin/employees')
+@Controller('admin/employees')
 @UseGuards(JwtAuthGuard)
 @Roles('ADMIN')
 export class AdminEmployeesController {

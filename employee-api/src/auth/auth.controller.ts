@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service.ts';
 
-@Controller('api/auth')
+@Controller('auth')
 export class AuthController {
   constructor(@Inject(AuthService) private readonly authService: AuthService) {}
 
