@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller.ts';
 import { AppService } from './app.service.ts';
+import { AuthModule } from './auth/auth.module.ts';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { AppService } from './app.service.ts';
       isGlobal: true,
       envFilePath: '../.env',
     }),
+    AuthModule,
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
