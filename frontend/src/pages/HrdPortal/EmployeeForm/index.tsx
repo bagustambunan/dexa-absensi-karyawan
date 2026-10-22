@@ -2,133 +2,120 @@ import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { isAxiosError } from "axios";
 import {
-  Button,
   Alert,
+  Button,
   Card,
   Col,
   Flex,
   Form,
   Input,
   Row,
-  Descriptions,
   Spin,
   Tag,
+  message,
 } from "antd";
-import { Link, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import PageWrapper from "../../../components/PageWrapper";
 import { employeeApi } from "../../../api/employee-api";
-import type { Employee } from "../type";
+import type { Employee, EmployeeFormValues } from "../type";
 
-type EmployeeFormProps = {
-  mode: "create" | "edit";
-};
+const fields = [
+  { name: "fullName", label: "Nama", max: 150 },
+  { name: "email", label: "Email", max: 255 },
+  { name: "position", label: "Posisi", max: 100 },
+  { name: "phone", label: "Nomor Handphone", max: 30 },
+] as const;
+const listPath = "/hrd-portal/employees";
 
-function EmployeeDetail({ employeeId }: { employeeId: string }) {
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
+function EmployeeEditor({ employeeId }: { employeeId?: string }) {
+  const isEdit = Boolean(employeeId);
+  const navigate = useNavigate();
+  const [form] = Form.useForm<EmployeeFormValues>();
+  const [loading, setLoading] = useState(isEdit);
+  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const [error, setError] = useState("");
+  const [isActive, setIsActive] = useState(true);
   const [reload, setReload] = useState(0);
 
   useEffect(() => {
+    if (!employeeId) return;
     employeeApi
       .get<Employee>(`/api/admin/employees/${encodeURIComponent(employeeId)}`, {
         timeout: 15000,
       })
       .then(({ data }) => {
-        setEmployee(data);
+        form.setFieldsValue({
+          fullName: data.fullName,
+          email: data.email,
+          position: data.position,
+          phone: data.phone,
+        });
+        setIsActive(data.isActive);
       })
       .catch((err) => {
         const status = isAxiosError(err) ? err.response?.status : undefined;
-        setError(
+        setLoadError(
           status === 404
             ? "Karyawan tidak ditemukan."
             : status === 403
               ? "Akses ditolak."
-              : "Gagal memuat detail karyawan. Silakan coba lagi.",
+              : "Gagal memuat karyawan. Silakan coba lagi.",
         );
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [employeeId, reload]);
+  }, [employeeId, form, reload]);
 
-  return (
-    <PageWrapper
-      title="Detail Karyawan"
-      subtitle="Informasi karyawan."
-      extra={
-        <Link to="/hrd-portal/employees">
-          <Button icon={<ArrowLeftOutlined />}>Kembali</Button>
-        </Link>
+  async function save(values: EmployeeFormValues) {
+    if (saving) return;
+    setSaving(true);
+    setError("");
+    const payload = {
+      fullName: values.fullName.trim(),
+      email: values.email.trim().toLowerCase(),
+      position: values.position.trim(),
+      phone: values.phone.trim(),
+    };
+    try {
+      if (employeeId) {
+        await employeeApi.patch(
+          `/api/admin/employees/${encodeURIComponent(employeeId)}`,
+          payload,
+        );
+      } else {
+        await employeeApi.post("/api/admin/employees", {
+          ...payload,
+          initialPassword: values.initialPassword,
+        });
       }
-    >
-      <Card title="Informasi Karyawan">
-        {loading ? (
-          <Spin description="Memuat karyawan..." />
-        ) : error ? (
-          <Alert
-            type="error"
-            title={error}
-            showIcon
-            role="alert"
-            action={
-              <Button
-                onClick={() => {
-                  setLoading(true);
-                  setError("");
-                  setReload((value) => value + 1);
-                }}
-              >
-                Coba lagi
-              </Button>
-            }
-          />
-        ) : (
-          employee && (
-            <Descriptions
-              column={{ xs: 1, md: 2 }}
-              bordered
-              items={[
-                { key: "id", label: "ID", children: employee.id },
-                { key: "name", label: "Nama", children: employee.fullName },
-                { key: "email", label: "Email", children: employee.email },
-                {
-                  key: "position",
-                  label: "Posisi",
-                  children: employee.position,
-                },
-                {
-                  key: "phone",
-                  label: "Nomor Handphone",
-                  children: employee.phone,
-                },
-                {
-                  key: "status",
-                  label: "Status",
-                  children: (
-                    <Tag color={employee.isActive ? "green" : "default"}>
-                      {employee.isActive ? "Aktif" : "Nonaktif"}
-                    </Tag>
-                  ),
-                },
-              ]}
-            />
-          )
-        )}
-      </Card>
-    </PageWrapper>
-  );
-}
-
-function EmployeeForm({ mode }: EmployeeFormProps) {
-  const { employeeId } = useParams();
-  const isEdit = mode === "edit";
-  if (isEdit)
-    return employeeId ? (
-      <EmployeeDetail key={employeeId} employeeId={employeeId} />
-    ) : (
-      <Alert type="error" title="Karyawan tidak ditemukan." />
-    );
+      void message.success(
+        isEdit
+          ? "Data karyawan berhasil diperbarui."
+          : "Karyawan berhasil ditambahkan.",
+      );
+      void navigate(listPath, { replace: true });
+    } catch (err) {
+      const status = isAxiosError(err) ? err.response?.status : undefined;
+      if (status === 409) {
+        form.setFields([{ name: "email", errors: ["Email sudah digunakan."] }]);
+        setError("Email sudah digunakan. Gunakan email lain.");
+      } else if (status !== 401) {
+        setError(
+          status === 403
+            ? "Akses ditolak."
+            : status === 404
+              ? "Karyawan tidak ditemukan."
+              : status === 400
+                ? "Data tidak valid. Periksa kembali isian Anda."
+                : "Gagal menyimpan karyawan. Silakan coba lagi.",
+        );
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <PageWrapper
@@ -139,48 +126,127 @@ function EmployeeForm({ mode }: EmployeeFormProps) {
           : "Tambahkan karyawan baru ke dalam sistem."
       }
       extra={
-        <Link to="/hrd-portal/employees">
-          <Button icon={<ArrowLeftOutlined />}>Kembali</Button>
+        <Link to={listPath}>
+          <Button icon={<ArrowLeftOutlined />} disabled={saving}>
+            Kembali
+          </Button>
         </Link>
       }
     >
-      <Card title="Informasi Karyawan">
-        <Form layout="vertical" initialValues={{ status: "active" }}>
+      <Card
+        title="Informasi Karyawan"
+        extra={
+          isEdit && !loading && !loadError ? (
+            <Tag color={isActive ? "green" : "default"}>
+              {isActive ? "Aktif" : "Nonaktif"}
+            </Tag>
+          ) : undefined
+        }
+      >
+        {loading && <Spin description="Memuat karyawan..." />}
+        {loadError && (
+          <Alert
+            type="error"
+            title={loadError}
+            showIcon
+            role="alert"
+            action={
+              <Button
+                onClick={() => {
+                  setLoading(true);
+                  setLoadError("");
+                  setReload((value) => value + 1);
+                }}
+              >
+                Coba lagi
+              </Button>
+            }
+          />
+        )}
+        <Form<EmployeeFormValues>
+          form={form}
+          layout="vertical"
+          onFinish={save}
+          disabled={saving || loading}
+          style={{ display: loading || loadError ? "none" : undefined }}
+          onValuesChange={() => setError("")}
+        >
+          {error && (
+            <Alert
+              type="error"
+              title={error}
+              showIcon
+              role="alert"
+              style={{ marginBottom: 24 }}
+            />
+          )}
           <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item label="Nama" name="name">
-                <Input placeholder="Nama lengkap" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item label="Email" name="email">
-                <Input type="email" placeholder="Email perusahaan" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item label="Posisi" name="position">
-                <Input placeholder="Posisi karyawan" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item label="Nomor Handphone" name="phoneNumber">
-                <Input placeholder="Nomor handphone" />
-              </Form.Item>
-            </Col>
+            {fields.map(({ name, label, max }) => (
+              <Col xs={24} md={12} key={name}>
+                <Form.Item
+                  name={name}
+                  label={label}
+                  rules={[
+                    {
+                      required: true,
+                      whitespace: true,
+                      message: `${label} wajib diisi.`,
+                    },
+                    { max, message: `Maksimal ${max} karakter.` },
+                    ...(name === "email"
+                      ? [
+                          {
+                            type: "email" as const,
+                            message: "Masukkan email yang valid.",
+                          },
+                        ]
+                      : []),
+                  ]}
+                >
+                  <Input
+                    maxLength={max}
+                    type={
+                      name === "email"
+                        ? "email"
+                        : name === "phone"
+                          ? "tel"
+                          : "text"
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            ))}
             {!isEdit && (
               <Col xs={24} md={12}>
-                <Form.Item label="Password Sementara" name="password">
-                  <Input.Password placeholder="Password sementara" />
+                <Form.Item
+                  name="initialPassword"
+                  label="Password Sementara"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Password sementara wajib diisi.",
+                    },
+                    { min: 8, message: "Password minimal 8 karakter." },
+                    {
+                      validator: (_, value: string | undefined) =>
+                        !value || new TextEncoder().encode(value).length <= 72
+                          ? Promise.resolve()
+                          : Promise.reject(
+                              new Error("Password maksimal 72 byte."),
+                            ),
+                    },
+                  ]}
+                >
+                  <Input.Password autoComplete="new-password" />
                 </Form.Item>
               </Col>
             )}
           </Row>
-
           <Flex justify="flex-end" gap={8}>
-            <Link to="/hrd-portal/employees">
-              <Button>Batal</Button>
-            </Link>
-            <Button type="primary" htmlType="submit">
+            <Button disabled={saving} onClick={() => void navigate(listPath)}>
+              Batal
+            </Button>
+            <Button type="primary" htmlType="submit" loading={saving}>
               {isEdit ? "Simpan Perubahan" : "Tambah Karyawan"}
             </Button>
           </Flex>
@@ -190,4 +256,10 @@ function EmployeeForm({ mode }: EmployeeFormProps) {
   );
 }
 
-export default EmployeeForm;
+export default function EmployeeForm({ mode }: { mode: "create" | "edit" }) {
+  const { employeeId } = useParams();
+  if (mode === "edit" && !employeeId)
+    return <Alert type="error" title="Karyawan tidak ditemukan." />;
+  const id = mode === "edit" ? employeeId : undefined;
+  return <EmployeeEditor key={id ?? "create"} employeeId={id} />;
+}

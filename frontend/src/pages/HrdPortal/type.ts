@@ -6,3 +6,10 @@ export type Employee = {
   phone: string;
   isActive: boolean;
 };
+
+export type EmployeeFormValues = Pick<
+  Employee,
+  "fullName" | "email" | "position" | "phone"
+> & {
+  initialPassword?: string;
+};

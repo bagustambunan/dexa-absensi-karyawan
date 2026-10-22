@@ -69,7 +69,7 @@ const columns: TableProps<Employee>["columns"] = [
     key: "action",
     render: (_, employee) => (
       <Link to={`/hrd-portal/employees/${employee.id}/edit`}>
-        <Button icon={<EditOutlined />}>Lihat Detail</Button>
+        <Button icon={<EditOutlined />}>Edit</Button>
       </Link>
     ),
   },
