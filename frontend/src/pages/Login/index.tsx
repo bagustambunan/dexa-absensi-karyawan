@@ -5,6 +5,7 @@ import { isAxiosError } from "axios";
 import { useNavigate } from "react-router";
 import { employeeApi } from "../../api/employee-api";
 import type { LoginResponse, LoginValues } from "./type";
+import { portalPath } from "../../auth/session";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -22,23 +23,22 @@ export default function LoginPage() {
       );
       sessionStorage.setItem("user", JSON.stringify(data.user));
       sessionStorage.setItem("accessToken", data.accessToken);
-      navigate(
-        data.user.role === "ADMIN" ? "/hrd-portal" : "/employee-portal",
-        { replace: true },
-      );
+      navigate(portalPath(data.user.role), { replace: true });
     } catch (err) {
       if (isAxiosError(err)) {
         const status = err.response?.status;
         setError(
           status === 401
-            ? "Email atau password salah, atau akun tidak aktif."
+            ? "Email atau password salah."
             : status === 400
               ? "Periksa kembali email dan password Anda."
-              : status === 429
-                ? "Terlalu banyak percobaan login. Coba lagi nanti."
-                : !err.response
-                  ? "Tidak dapat menghubungi server. Periksa koneksi dan coba lagi."
-                  : "Server sedang bermasalah. Silakan coba lagi nanti.",
+              : status === 403
+                ? "Akses ditolak."
+                : status === 429
+                  ? "Terlalu banyak percobaan login. Coba lagi nanti."
+                  : !err.response
+                    ? "Tidak dapat menghubungi server. Periksa koneksi dan coba lagi."
+                    : "Server sedang bermasalah. Silakan coba lagi nanti.",
         );
       } else {
         setError(
