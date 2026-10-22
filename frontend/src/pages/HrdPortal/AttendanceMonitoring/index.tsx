@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { SearchOutlined } from "@ant-design/icons";
 import {
+  Alert,
   Avatar,
   Button,
   Card,
@@ -11,58 +13,86 @@ import {
   Typography,
   type TableProps,
 } from "antd";
+import { isAxiosError } from "axios";
 import PageWrapper from "../../../components/PageWrapper";
+import { attendanceApi } from "../../../api/attendance-api";
+import { employeeApi } from "../../../api/employee-api";
+import type {
+  Attendance,
+  AttendanceMonitoringFilters,
+  AttendanceMonitoringFormValues,
+  Employee,
+} from "../type";
+import { renderTime } from "../../../utils";
 
-type Attendance = {
-  id: string;
-  employeeName: string;
-  initials: string;
-  date: string;
-  timeIn: string;
-  timeOut?: string;
-};
+export default function AttendanceMonitoring() {
+  const [attendance, setAttendance] = useState<Attendance[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [reload, setReload] = useState(0);
+  const [filters, setFilters] = useState<AttendanceMonitoringFilters>({});
 
-const attendanceData: Attendance[] = [
-  {
-    id: "EMP-001",
-    employeeName: "Bagus Tambunan",
-    initials: "BT",
-    date: "2026-10-20",
-    timeIn: "2026-10-20 08:10",
-    timeOut: "2026-10-20 17:00",
-  },
-];
+  useEffect(() => {
+    Promise.all([
+      attendanceApi.get<Attendance[]>("/api/admin/attendance", {
+        params: filters,
+      }),
+      employeeApi.get<Employee[]>("/api/admin/employees"),
+    ])
+      .then(([attendanceResponse, employeesResponse]) => {
+        setAttendance(attendanceResponse.data);
+        setEmployees(employeesResponse.data);
+      })
+      .catch((err: unknown) => {
+        setError(
+          isAxiosError(err) && err.response?.status === 403
+            ? "Akses ditolak."
+            : "Gagal memuat data absensi dan karyawan. Silakan coba lagi.",
+        );
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [filters, reload]);
 
-const columns: TableProps<Attendance>["columns"] = [
-  {
-    title: "Karyawan",
-    key: "employee",
-    render: (_, attendance) => (
-      <Space>
-        <Avatar>{attendance.initials}</Avatar>
-        <Space orientation="vertical" size={0}>
-          <Typography.Text strong>{attendance.employeeName}</Typography.Text>
-          <Typography.Text type="secondary">{attendance.id}</Typography.Text>
-        </Space>
-      </Space>
-    ),
-  },
-  {
-    title: "Tanggal",
-    dataIndex: "date",
-  },
-  {
-    title: "Masuk",
-    dataIndex: "timeIn",
-  },
-  {
-    title: "Pulang",
-    dataIndex: "timeOut",
-    render: (timeOut?: string) => timeOut ?? "—",
-  },
-];
+  const employeesById = new Map(
+    employees.map((employee) => [employee.id, employee]),
+  );
+  const columns: TableProps<Attendance>["columns"] = [
+    {
+      title: "Karyawan",
+      key: "employee",
+      render: (_, record) => {
+        const name = employeesById.get(record.employeeId)?.fullName;
+        return (
+          <Space>
+            <Avatar>
+              {(name ?? record.employeeId)
+                .trim()
+                .split(/\s+/)
+                .slice(0, 2)
+                .map((part) => part[0])
+                .join("")
+                .toUpperCase()}
+            </Avatar>
+            <Space orientation="vertical" size={0}>
+              <Typography.Text strong>
+                {name ?? "Karyawan tidak ditemukan"}
+              </Typography.Text>
+              <Typography.Text type="secondary">
+                {record.employeeId}
+              </Typography.Text>
+            </Space>
+          </Space>
+        );
+      },
+    },
+    { title: "Tanggal", dataIndex: "date" },
+    { title: "Masuk", dataIndex: "checkInAt", render: renderTime },
+    { title: "Pulang", dataIndex: "checkOutAt", render: renderTime },
+  ];
 
-function AttendanceMonitoring() {
   return (
     <PageWrapper
       title="Monitoring Absensi"
@@ -70,36 +100,79 @@ function AttendanceMonitoring() {
     >
       <Card title="Daftar Absensi">
         <Space orientation="vertical" size={16} style={{ width: "100%" }}>
-          <Form layout="inline">
-            <Form.Item label="Pilih Tanggal">
-              <DatePicker.RangePicker />
+          {error && (
+            <Alert
+              type="error"
+              title={error}
+              showIcon
+              role="alert"
+              action={
+                <Button
+                  onClick={() => {
+                    setLoading(true);
+                    setError("");
+                    setReload((value) => value + 1);
+                  }}
+                >
+                  Coba lagi
+                </Button>
+              }
+            />
+          )}
+          <Form<AttendanceMonitoringFormValues>
+            layout="inline"
+            onFinish={(values) => {
+              setLoading(true);
+              setError("");
+              setFilters({
+                from: values.dates?.[0]?.format("YYYY-MM-DD"),
+                to: values.dates?.[1]?.format("YYYY-MM-DD"),
+                employeeId: values.employeeId,
+              });
+            }}
+          >
+            <Form.Item name="dates" label="Pilih Tanggal">
+              <DatePicker.RangePicker format="DD/MM/YYYY" />
             </Form.Item>
-            <Form.Item label="Karyawan">
+            <Form.Item name="employeeId" label="Karyawan">
               <Select
-                defaultValue="all"
-                options={[
-                  { value: "all", label: "Semua karyawan" },
-                  { value: "EMP-001", label: "Bagus Tambunan" },
-                ]}
+                allowClear
+                showSearch={{ optionFilterProp: "label" }}
+                placeholder="Semua karyawan"
+                loading={loading}
+                style={{ minWidth: 220 }}
+                options={employees.map((employee) => ({
+                  value: employee.id,
+                  label: `${employee.fullName} (${employee.email})`,
+                }))}
               />
             </Form.Item>
             <Form.Item>
-              <Button block type="primary" icon={<SearchOutlined />}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                icon={<SearchOutlined />}
+                loading={loading}
+              >
                 Cari
               </Button>
             </Form.Item>
           </Form>
           <Table
-            rowKey={(attendance) => `${attendance.id}-${attendance.date}`}
+            rowKey={(record) => `${record.employeeId}-${record.date}`}
             columns={columns}
-            dataSource={attendanceData}
-            pagination={false}
+            dataSource={error ? [] : attendance}
+            loading={loading}
+            pagination={{ pageSize: 10 }}
             scroll={{ x: 800 }}
+            locale={{
+              emptyText: error
+                ? "Data tidak tersedia"
+                : "Tidak ada absensi yang ditemukan",
+            }}
           />
         </Space>
       </Card>
     </PageWrapper>
   );
 }
-
-export default AttendanceMonitoring;
