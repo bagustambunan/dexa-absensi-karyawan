@@ -11,6 +11,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -166,9 +167,15 @@ export class AdminEmployeesController {
   }
 
   @Get()
-  list() {
+  list(@Query('isActive') isActive: unknown) {
+    if (isActive !== undefined && isActive !== 'true' && isActive !== 'false') {
+      throw new BadRequestException('isActive harus true atau false');
+    }
     return this.employees.find({
-      where: { role: 'EMPLOYEE' },
+      where: {
+        role: 'EMPLOYEE',
+        ...(isActive === undefined ? {} : { isActive: isActive === 'true' }),
+      },
       select: employeeFields,
       order: { fullName: 'ASC', id: 'ASC' },
     });

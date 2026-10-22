@@ -13,6 +13,7 @@ import {
   Form,
   Input,
   Row,
+  Select,
   Space,
   Statistic,
   Table,
@@ -29,6 +30,7 @@ import type { Employee } from "../type";
 type Filters = Partial<
   Pick<Employee, "fullName" | "email" | "position" | "phone">
 >;
+type Status = "all" | "active" | "inactive";
 
 const columns: TableProps<Employee>["columns"] = [
   {
@@ -81,11 +83,14 @@ export default function EmployeeManagement() {
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
   const [filters, setFilters] = useState<Filters>({});
+  const [status, setStatus] = useState<Status>("all");
 
   useEffect(() => {
     employeeApi
       .get<Employee[]>("/api/admin/employees", {
-        timeout: 15000,
+        params: {
+          isActive: status === "all" ? undefined : status === "active",
+        },
       })
       .then(({ data }) => {
         setEmployees(data);
@@ -100,7 +105,7 @@ export default function EmployeeManagement() {
       .finally(() => {
         setLoading(false);
       });
-  }, [reload]);
+  }, [reload, status]);
 
   const filteredEmployees = employees.filter((employee) =>
     (Object.keys(filters) as (keyof Filters)[]).every((key) =>
@@ -156,28 +161,63 @@ export default function EmployeeManagement() {
               }
             />
           )}
-          <Form<Filters> layout="inline" onFinish={setFilters}>
-            <Form.Item name="fullName" label="Nama karyawan">
-              <Input placeholder="Nama karyawan" allowClear />
-            </Form.Item>
-            <Form.Item name="email" label="Email">
-              <Input placeholder="Email" allowClear />
-            </Form.Item>
-            <Form.Item name="position" label="Posisi">
-              <Input placeholder="Posisi" allowClear />
-            </Form.Item>
-            <Form.Item name="phone" label="Nomor Handphone">
-              <Input placeholder="Nomor Handphone" allowClear />
-            </Form.Item>
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                icon={<SearchOutlined />}
-              >
-                Cari
-              </Button>
-            </Form.Item>
+          <Form<Filters & { status: Status }>
+            initialValues={{ status: "all" }}
+            onFinish={({ status: nextStatus, ...textFilters }) => {
+              setFilters(textFilters);
+              if (nextStatus !== status) {
+                setLoading(true);
+                setError("");
+                setStatus(nextStatus);
+              }
+            }}
+          >
+            <Row gutter={[12, 12]}>
+              <Col span={8}>
+                <Form.Item name="fullName" label="Nama karyawan">
+                  <Input placeholder="Nama karyawan" allowClear />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="email" label="Email">
+                  <Input placeholder="Email" allowClear />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="position" label="Posisi">
+                  <Input placeholder="Posisi" allowClear />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={[12, 12]}>
+              <Col span={8}>
+                <Form.Item name="phone" label="Nomor Handphone">
+                  <Input placeholder="Nomor Handphone" allowClear />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="status" label="Status">
+                  <Select
+                    options={[
+                      { value: "all", label: "Semua" },
+                      { value: "active", label: "Aktif" },
+                      { value: "inactive", label: "Nonaktif" },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    icon={<SearchOutlined />}
+                  >
+                    Cari
+                  </Button>
+                </Form.Item>
+              </Col>
+            </Row>
           </Form>
           <Table
             rowKey="id"
