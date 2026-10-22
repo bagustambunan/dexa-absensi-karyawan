@@ -6,6 +6,7 @@ import { AppService } from './app.service.ts';
 import { AttendanceEvent } from './attendance/attendance-event.entity.ts';
 import { AuthModule } from './auth/auth.module.ts';
 import { AdminAttendanceController } from './attendance/admin-attendance.controller.ts';
+import { AttendanceController } from './attendance/attendance.controller.ts';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { AdminAttendanceController } from './attendance/admin-attendance.control
       }),
     }),
   ],
-  controllers: [AppController, AdminAttendanceController],
+  controllers: [AppController, AdminAttendanceController, AttendanceController],
   providers: [AppService],
 })
 export class AppModule { }
