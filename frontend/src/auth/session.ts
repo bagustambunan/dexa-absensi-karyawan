@@ -23,5 +23,5 @@ export function getSessionRole(): Role | null {
 }
 
 export function portalPath(role: Role) {
-  return role === "ADMIN" ? "/admin" : "/employee";
+  return role === "ADMIN" ? "/hrd-portal" : "/employee-portal";
 }

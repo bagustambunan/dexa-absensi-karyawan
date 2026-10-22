@@ -16,10 +16,21 @@ import {
   Typography,
   type MenuProps,
 } from "antd";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 
 const EMPLOYEE_PORTAL_PATH = "/employee-portal";
 const HRD_PORTAL_PATH = "/hrd-portal";
+
+function getUserName(): string {
+  try {
+    const user = JSON.parse(sessionStorage.getItem("user") ?? "null");
+    return typeof user?.fullName === "string" && user.fullName.trim()
+      ? user.fullName.trim()
+      : "Pengguna";
+  } catch {
+    return "Pengguna";
+  }
+}
 
 const employeeMenuItems: MenuProps["items"] = [
   {
@@ -58,6 +69,14 @@ const hrdMenuItems: MenuProps["items"] = [
 
 function Sidebar({ portal = "employee" }: { portal?: "employee" | "hrd" }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const fullName = getUserName();
+  const initials = fullName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
   const isHrdPortal = portal === "hrd";
   const portalPath = isHrdPortal ? HRD_PORTAL_PATH : EMPLOYEE_PORTAL_PATH;
   const defaultPath = isHrdPortal
@@ -67,6 +86,12 @@ function Sidebar({ portal = "employee" }: { portal?: "employee" | "hrd" }) {
     pathname === portalPath || pathname === `${portalPath}/`
       ? defaultPath
       : pathname;
+
+  function logout() {
+    sessionStorage.removeItem("accessToken");
+    sessionStorage.removeItem("user");
+    void navigate("/login", { replace: true });
+  }
 
   return (
     <Layout.Sider
@@ -104,12 +129,17 @@ function Sidebar({ portal = "employee" }: { portal?: "employee" | "hrd" }) {
           style={{ width: "100%", padding: 16 }}
         >
           <Space>
-            <Avatar>{isHrdPortal ? "HR" : "BT"}</Avatar>
-            <Typography.Text strong>
-              {isHrdPortal ? "Admin HRD" : "Bagus Tambunan"}
+            <Avatar style={{ flexShrink: 0 }}>{initials}</Avatar>
+            <Typography.Text
+              strong
+              ellipsis
+              title={fullName}
+              style={{ maxWidth: 160 }}
+            >
+              {fullName}
             </Typography.Text>
           </Space>
-          <Button danger block icon={<LogoutOutlined />}>
+          <Button danger block icon={<LogoutOutlined />} onClick={logout}>
             Logout
           </Button>
         </Space>
