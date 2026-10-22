@@ -9,6 +9,7 @@ import {
   Flex,
   Form,
   Input,
+  Popconfirm,
   Row,
   Spin,
   Tag,
@@ -33,6 +34,8 @@ function EmployeeEditor({ employeeId }: { employeeId?: string }) {
   const [form] = Form.useForm<EmployeeFormValues>();
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
+  const busy = saving || deactivating;
   const [loadError, setLoadError] = useState("");
   const [error, setError] = useState("");
   const [isActive, setIsActive] = useState(true);
@@ -69,7 +72,7 @@ function EmployeeEditor({ employeeId }: { employeeId?: string }) {
   }, [employeeId, form, reload]);
 
   async function save(values: EmployeeFormValues) {
-    if (saving) return;
+    if (busy) return;
     setSaving(true);
     setError("");
     const payload = {
@@ -117,6 +120,36 @@ function EmployeeEditor({ employeeId }: { employeeId?: string }) {
     }
   }
 
+  async function deactivate() {
+    if (!employeeId || !isActive || busy) return;
+    setDeactivating(true);
+    setError("");
+    try {
+      await employeeApi.delete(
+        `/api/admin/employees/${encodeURIComponent(employeeId)}`,
+        {
+          timeout: 15000,
+        },
+      );
+      setIsActive(false);
+      void message.success("Karyawan berhasil dinonaktifkan.");
+      void navigate(listPath, { replace: true });
+    } catch (err) {
+      const status = isAxiosError(err) ? err.response?.status : undefined;
+      if (status !== 401) {
+        setError(
+          status === 403
+            ? "Akses ditolak."
+            : status === 404
+              ? "Karyawan tidak ditemukan."
+              : "Gagal menonaktifkan karyawan. Silakan coba lagi.",
+        );
+      }
+    } finally {
+      setDeactivating(false);
+    }
+  }
+
   return (
     <PageWrapper
       title={isEdit ? "Update Karyawan" : "Tambah Karyawan"}
@@ -127,7 +160,7 @@ function EmployeeEditor({ employeeId }: { employeeId?: string }) {
       }
       extra={
         <Link to={listPath}>
-          <Button icon={<ArrowLeftOutlined />} disabled={saving}>
+          <Button icon={<ArrowLeftOutlined />} disabled={busy}>
             Kembali
           </Button>
         </Link>
@@ -167,7 +200,7 @@ function EmployeeEditor({ employeeId }: { employeeId?: string }) {
           form={form}
           layout="vertical"
           onFinish={save}
-          disabled={saving || loading}
+          disabled={busy || loading}
           style={{ display: loading || loadError ? "none" : undefined }}
           onValuesChange={() => setError("")}
         >
@@ -243,7 +276,23 @@ function EmployeeEditor({ employeeId }: { employeeId?: string }) {
             )}
           </Row>
           <Flex justify="flex-end" gap={8}>
-            <Button disabled={saving} onClick={() => void navigate(listPath)}>
+            {isEdit && isActive && (
+              <Popconfirm
+                title="Nonaktifkan karyawan?"
+                description="Karyawan tidak dapat login lagi. Data dan riwayat tetap tersimpan."
+                okText="Nonaktifkan"
+                cancelText="Batal"
+                disabled={busy}
+                okButtonProps={{ danger: true, loading: deactivating }}
+                cancelButtonProps={{ disabled: deactivating }}
+                onConfirm={deactivate}
+              >
+                <Button danger disabled={busy} loading={deactivating}>
+                  Nonaktifkan
+                </Button>
+              </Popconfirm>
+            )}
+            <Button disabled={busy} onClick={() => void navigate(listPath)}>
               Batal
             </Button>
             <Button type="primary" htmlType="submit" loading={saving}>

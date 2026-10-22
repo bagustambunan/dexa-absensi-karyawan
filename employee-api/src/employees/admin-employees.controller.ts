@@ -3,7 +3,10 @@ import {
   Body,
   ConflictException,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   NotFoundException,
   Param,
   Patch,
@@ -38,7 +41,7 @@ export class AdminEmployeesController {
   constructor(
     @InjectRepository(Employee)
     private readonly employees: Repository<Employee>,
-  ) { }
+  ) {}
 
   @Post()
   async create(@Body() body: unknown) {
@@ -169,6 +172,13 @@ export class AdminEmployeesController {
       select: employeeFields,
       order: { fullName: 'ASC', id: 'ASC' },
     });
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deactivate(@Param('id') id: string): Promise<void> {
+    await this.detail(id);
+    await this.employees.update({ id, role: 'EMPLOYEE' }, { isActive: false });
   }
 
   @Get(':id')
