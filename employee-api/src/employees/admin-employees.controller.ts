@@ -6,11 +6,17 @@ import {
   Get,
   NotFoundException,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository, type FindOptionsSelect } from 'typeorm';
+import {
+  Not,
+  QueryFailedError,
+  Repository,
+  type FindOptionsSelect,
+} from 'typeorm';
 import { randomUUID } from 'node:crypto';
 import { hash } from 'bcrypt';
 import { JwtAuthGuard, Roles } from '../auth/jwt-auth.guard.ts';
@@ -97,6 +103,63 @@ export class AdminEmployeesController {
       throw error;
     }
     return { id, fullName, email, position, phone, isActive: true };
+  }
+
+  @Patch(':id')
+  async update(@Param('id') id: string, @Body() body: unknown) {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      throw new BadRequestException('Data karyawan tidak valid');
+    }
+    const input = body as Record<string, unknown>;
+    const limits = { fullName: 150, email: 255, position: 100, phone: 30 };
+    if (
+      !Object.keys(input).length ||
+      Object.keys(input).some((key) => !Object.hasOwn(limits, key))
+    ) {
+      throw new BadRequestException(
+        'Hanya fullName, email, position, dan phone yang boleh diubah',
+      );
+    }
+    const changes: Partial<Pick<Employee, keyof typeof limits>> = {};
+    for (const field of Object.keys(limits) as (keyof typeof limits)[]) {
+      if (!Object.hasOwn(input, field)) continue;
+      const value = input[field];
+      if (
+        typeof value !== 'string' ||
+        !value.trim() ||
+        value.trim().length > limits[field]
+      ) {
+        throw new BadRequestException(
+          `${field} wajib diisi, maksimal ${limits[field]} karakter`,
+        );
+      }
+      changes[field] = value.trim();
+    }
+    if (changes.email !== undefined) {
+      changes.email = changes.email.toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(changes.email)) {
+        throw new BadRequestException('Format email tidak valid');
+      }
+    }
+    await this.detail(id);
+    if (
+      changes.email !== undefined &&
+      (await this.employees.existsBy({ email: changes.email, id: Not(id) }))
+    ) {
+      throw new ConflictException('Email sudah digunakan');
+    }
+    try {
+      await this.employees.update({ id, role: 'EMPLOYEE' }, changes);
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string }).code === 'ER_DUP_ENTRY'
+      ) {
+        throw new ConflictException('Email sudah digunakan');
+      }
+      throw error;
+    }
+    return this.detail(id);
   }
 
   @Get()
