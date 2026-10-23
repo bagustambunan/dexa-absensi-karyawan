@@ -6,6 +6,7 @@ import { AppService } from './app.service.ts';
 import { AuthModule } from './auth/auth.module.ts';
 import { EmployeesModule } from './employees/employees.module.ts';
 import { ProfileChangeLog } from './audit/profile-change-log.entity.ts';
+import { AuditModule } from './audit/audit.module.ts';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ProfileChangeLog } from './audit/profile-change-log.entity.ts';
     }),
     AuthModule,
     EmployeesModule,
+    AuditModule,
     TypeOrmModule.forRootAsync({
       name: 'audit',
       inject: [ConfigService],

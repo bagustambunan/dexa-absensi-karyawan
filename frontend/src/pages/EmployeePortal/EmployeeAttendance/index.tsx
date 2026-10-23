@@ -64,9 +64,7 @@ export default function EmployeeAttendance() {
     if (!ready) return;
     setPending(kind);
     try {
-      await attendanceApi.post(`/api/attendance/${kind}`, undefined, {
-        timeout: 15000,
-      });
+      await attendanceApi.post(`/api/attendance/${kind}`, undefined);
       void message.success(
         kind === "check-in"
           ? "Absen masuk berhasil."

@@ -44,9 +44,7 @@ function EmployeeEditor({ employeeId }: { employeeId?: string }) {
   useEffect(() => {
     if (!employeeId) return;
     employeeApi
-      .get<Employee>(`/api/admin/employees/${encodeURIComponent(employeeId)}`, {
-        timeout: 15000,
-      })
+      .get<Employee>(`/api/admin/employees/${encodeURIComponent(employeeId)}`)
       .then(({ data }) => {
         form.setFieldsValue({
           fullName: data.fullName,
@@ -127,9 +125,6 @@ function EmployeeEditor({ employeeId }: { employeeId?: string }) {
     try {
       await employeeApi.delete(
         `/api/admin/employees/${encodeURIComponent(employeeId)}`,
-        {
-          timeout: 15000,
-        },
       );
       setIsActive(false);
       void message.success("Karyawan berhasil dinonaktifkan.");
