@@ -5,6 +5,7 @@ import { AppController } from './app.controller.ts';
 import { AppService } from './app.service.ts';
 import { AuthModule } from './auth/auth.module.ts';
 import { EmployeesModule } from './employees/employees.module.ts';
+import { ProfileChangeLog } from './audit/profile-change-log.entity.ts';
 
 @Module({
   imports: [
@@ -14,6 +15,21 @@ import { EmployeesModule } from './employees/employees.module.ts';
     }),
     AuthModule,
     EmployeesModule,
+    TypeOrmModule.forRootAsync({
+      name: 'audit',
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'mysql',
+        host: config.getOrThrow<string>('MYSQL_HOST'),
+        port: Number(config.getOrThrow<string>('MYSQL_PORT')),
+        username: config.getOrThrow<string>('MYSQL_USER'),
+        password: config.getOrThrow<string>('MYSQL_PASSWORD'),
+        database: config.getOrThrow<string>('AUDIT_DB_NAME'),
+        timezone: 'Z',
+        entities: [ProfileChangeLog],
+        synchronize: false,
+      }),
+    }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
