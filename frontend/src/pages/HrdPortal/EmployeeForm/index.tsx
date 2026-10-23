@@ -21,6 +21,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import PageWrapper from "../../../components/PageWrapper";
 import { employeeApi } from "../../../api/employee-api";
 import type { Employee, EmployeeFormValues } from "../type";
+import { passwordByteLimitRule } from "../../../utils/validation";
 
 const fields = [
   { name: "fullName", label: "Nama", max: 150 },
@@ -240,11 +241,17 @@ function EmployeeEditor({ employeeId }: { employeeId?: string }) {
                       whitespace: true,
                       message: `${label} wajib diisi.`,
                     },
-                    { max, message: `Maksimal ${max} karakter.` },
+                    {
+                      max,
+                      transform: (value: string | undefined) => value?.trim(),
+                      message: `Maksimal ${max} karakter.`,
+                    },
                     ...(name === "email"
                       ? [
                           {
                             type: "email" as const,
+                            transform: (value: string | undefined) =>
+                              value?.trim(),
                             message: "Masukkan email yang valid.",
                           },
                         ]
@@ -275,14 +282,7 @@ function EmployeeEditor({ employeeId }: { employeeId?: string }) {
                       message: "Password sementara wajib diisi.",
                     },
                     { min: 8, message: "Password minimal 8 karakter." },
-                    {
-                      validator: (_, value: string | undefined) =>
-                        !value || new TextEncoder().encode(value).length <= 72
-                          ? Promise.resolve()
-                          : Promise.reject(
-                              new Error("Password maksimal 72 byte."),
-                            ),
-                    },
+                    passwordByteLimitRule,
                   ]}
                 >
                   <Input.Password autoComplete="new-password" />

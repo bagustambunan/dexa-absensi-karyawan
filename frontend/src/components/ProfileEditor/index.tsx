@@ -24,6 +24,7 @@ import {
 import { useEffect, useState } from "react";
 import { isAxiosError } from "axios";
 import { employeeApi, getAvatarSrc } from "../../api/employee-api";
+import { passwordByteLimitRule } from "../../utils/validation";
 import type {
   EmployeeProfileData,
   PasswordValues,
@@ -45,9 +46,11 @@ function showSaveError(error: unknown, fallback: string) {
   void message.error(getRequestErrorMessage(error, fallback));
 }
 
+type PasswordFormValues = PasswordValues & { confirmPassword: string };
+
 function ProfileEditor() {
   const [phoneForm] = Form.useForm<{ phoneNumber: string }>();
-  const [passwordForm] = Form.useForm<PasswordValues>();
+  const [passwordForm] = Form.useForm<PasswordFormValues>();
   const [employee, setEmployee] = useState<EmployeeProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -138,11 +141,17 @@ function ProfileEditor() {
     }
   }
 
-  async function savePassword(values: PasswordValues) {
+  async function savePassword({
+    currentPassword,
+    newPassword,
+  }: PasswordFormValues) {
     if (disabled) return;
     setPending("password");
     try {
-      await employeeApi.patch("/api/me/password", values);
+      await employeeApi.patch("/api/me/password", {
+        currentPassword,
+        newPassword,
+      });
       passwordForm.resetFields();
       void message.success("Password berhasil diubah.");
     } catch (error: unknown) {
@@ -298,7 +307,11 @@ function ProfileEditor() {
                   label="Nomor Handphone"
                   name="phoneNumber"
                   rules={[
-                    { required: true, message: "Nomor handphone wajib diisi." },
+                    {
+                      required: true,
+                      whitespace: true,
+                      message: "Nomor handphone wajib diisi.",
+                    },
                     {
                       pattern: /^\+?[0-9]{8,15}$/,
                       transform: (value: string | undefined) => value?.trim(),
@@ -336,6 +349,7 @@ function ProfileEditor() {
                       required: true,
                       message: "Password saat ini wajib diisi.",
                     },
+                    passwordByteLimitRule,
                   ]}
                 >
                   <Input.Password autoComplete="current-password" />
@@ -346,14 +360,30 @@ function ProfileEditor() {
                   rules={[
                     { required: true, message: "Password baru wajib diisi." },
                     { min: 8, message: "Password baru minimal 8 karakter." },
+                    passwordByteLimitRule,
+                  ]}
+                >
+                  <Input.Password autoComplete="new-password" />
+                </Form.Item>
+                <Form.Item
+                  label="Konfirmasi Password Baru"
+                  name="confirmPassword"
+                  dependencies={["newPassword"]}
+                  rules={[
                     {
+                      required: true,
+                      message: "Konfirmasi password baru wajib diisi.",
+                    },
+                    ({ getFieldValue }) => ({
                       validator: (_, value: string | undefined) =>
-                        !value || new TextEncoder().encode(value).length <= 72
+                        !value || value === getFieldValue("newPassword")
                           ? Promise.resolve()
                           : Promise.reject(
-                              new Error("Password baru maksimal 72 byte."),
+                              new Error(
+                                "Konfirmasi password baru tidak cocok.",
+                              ),
                             ),
-                    },
+                    }),
                   ]}
                 >
                   <Input.Password autoComplete="new-password" />
