@@ -1,5 +1,5 @@
 import LoginPage from "./pages/Login";
-import Error404Page from "./pages/Error404";
+import Error404Page, { RouterErrorBoundary } from "./pages/Error404";
 import AuthLayout from "./components/AuthLayout";
 import { createBrowserRouter, redirect } from "react-router";
 import { getSessionRole, portalPath, type Role } from "./auth/session";
@@ -22,6 +22,7 @@ function requireRole(requiredRole: Role) {
 export const router = createBrowserRouter([
   {
     path: "/",
+    errorElement: <RouterErrorBoundary />,
     children: [
       {
         index: true,
