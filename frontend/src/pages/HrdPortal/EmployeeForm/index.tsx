@@ -1,3 +1,4 @@
+import { useLatestRequest } from "../../../hooks/useLatestRequest";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { isAxiosError } from "axios";
@@ -41,33 +42,42 @@ function EmployeeEditor({ employeeId }: { employeeId?: string }) {
   const [isActive, setIsActive] = useState(true);
   const [reload, setReload] = useState(0);
 
+  const { runRequest, cancelRequest } = useLatestRequest();
+
   useEffect(() => {
     if (!employeeId) return;
-    employeeApi
-      .get<Employee>(`/api/admin/employees/${encodeURIComponent(employeeId)}`)
-      .then(({ data }) => {
-        form.setFieldsValue({
-          fullName: data.fullName,
-          email: data.email,
-          position: data.position,
-          phone: data.phone,
-        });
-        setIsActive(data.isActive);
-      })
-      .catch((err) => {
-        const status = isAxiosError(err) ? err.response?.status : undefined;
-        setLoadError(
-          status === 404
-            ? "Karyawan tidak ditemukan."
-            : status === 403
-              ? "Akses ditolak."
-              : "Gagal memuat karyawan. Silakan coba lagi.",
-        );
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [employeeId, form, reload]);
+    void runRequest(
+      () =>
+        employeeApi.get<Employee>(
+          `/api/admin/employees/${encodeURIComponent(employeeId)}`,
+        ),
+      {
+        onSuccess: ({ data }) => {
+          form.setFieldsValue({
+            fullName: data.fullName,
+            email: data.email,
+            position: data.position,
+            phone: data.phone,
+          });
+          setIsActive(data.isActive);
+        },
+        onError: (err) => {
+          const status = isAxiosError(err) ? err.response?.status : undefined;
+          setLoadError(
+            status === 404
+              ? "Karyawan tidak ditemukan."
+              : status === 403
+                ? "Akses ditolak."
+                : "Gagal memuat karyawan. Silakan coba lagi.",
+          );
+        },
+        onFinally: () => {
+          setLoading(false);
+        },
+      },
+    );
+    return cancelRequest;
+  }, [employeeId, form, reload, runRequest, cancelRequest]);
 
   async function save(values: EmployeeFormValues) {
     if (busy) return;

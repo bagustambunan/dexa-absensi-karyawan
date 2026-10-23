@@ -1,3 +1,4 @@
+import { useLatestRequest } from "../../../hooks/useLatestRequest";
 import { useEffect, useState } from "react";
 import { Alert, Button, Card, message, Space } from "antd";
 import { isAxiosError } from "axios";
@@ -32,29 +33,36 @@ export default function EmployeeAttendance() {
     return () => window.clearInterval(timer);
   }, []);
 
+  const { runRequest, cancelRequest } = useLatestRequest();
+
   useEffect(() => {
-    attendanceApi
-      .get<AttendanceDay[]>("/api/attendance/me", {
-        params: { from: today, to: today },
-      })
-      .then(({ data }) => {
-        setAttendance(data.find((day) => day.date === today) ?? null);
-        setLoadedDate(today);
-        setError("");
-      })
-      .catch((err: unknown) => {
-        setLoadedDate(today);
-        setAttendance(null);
-        setError(
-          isAxiosError(err) && err.response?.status === 403
-            ? "Akses ditolak."
-            : "Gagal memuat status absensi. Silakan coba lagi.",
-        );
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [today, reload]);
+    void runRequest(
+      () =>
+        attendanceApi.get<AttendanceDay[]>("/api/attendance/me", {
+          params: { from: today, to: today },
+        }),
+      {
+        onSuccess: ({ data }) => {
+          setAttendance(data.find((day) => day.date === today) ?? null);
+          setLoadedDate(today);
+          setError("");
+        },
+        onError: (err: unknown) => {
+          setLoadedDate(today);
+          setAttendance(null);
+          setError(
+            isAxiosError(err) && err.response?.status === 403
+              ? "Akses ditolak."
+              : "Gagal memuat status absensi. Silakan coba lagi.",
+          );
+        },
+        onFinally: () => {
+          setLoading(false);
+        },
+      },
+    );
+    return cancelRequest;
+  }, [today, reload, runRequest, cancelRequest]);
 
   const isLoading = loading || loadedDate !== today;
   const ready = !isLoading && !error && !pending;

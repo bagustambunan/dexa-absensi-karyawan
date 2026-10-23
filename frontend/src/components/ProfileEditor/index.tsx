@@ -1,3 +1,4 @@
+import { useLatestRequest } from "../../hooks/useLatestRequest";
 import { InboxOutlined, SaveOutlined, UserOutlined } from "@ant-design/icons";
 import {
   Alert,
@@ -59,24 +60,29 @@ function ProfileEditor() {
     };
   }, [previewUrl]);
 
+  const { runRequest, cancelRequest } = useLatestRequest();
+
   useEffect(() => {
-    employeeApi
-      .get<EmployeeProfileData>("/api/me")
-      .then(({ data }) => {
+    void runRequest(() => employeeApi.get<EmployeeProfileData>("/api/me"), {
+      onSuccess: ({ data }) => {
         setEmployee(data);
         phoneForm.setFieldsValue({ phoneNumber: data.phone });
         setError("");
-      })
-      .catch((err: unknown) => {
+      },
+      onError: (err: unknown) => {
         setEmployee(null);
         setError(
           isAxiosError(err) && err.response?.status === 403
             ? "Akses ditolak."
             : "Gagal memuat profil. Silakan coba lagi.",
         );
-      })
-      .finally(() => setLoading(false));
-  }, [reload, phoneForm]);
+      },
+      onFinally: () => {
+        setLoading(false);
+      },
+    });
+    return cancelRequest;
+  }, [reload, phoneForm, runRequest, cancelRequest]);
 
   async function saveAvatar() {
     if (disabled || !photo?.originFileObj) return;

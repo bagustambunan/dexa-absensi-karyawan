@@ -1,3 +1,4 @@
+import { useLatestRequest } from "../../../hooks/useLatestRequest";
 import { useEffect, useState } from "react";
 import { Alert, Button, Card, DatePicker, Form, Space } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
@@ -24,28 +25,35 @@ export default function EmployeeAttendanceSummary() {
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
 
+  const { runRequest, cancelRequest } = useLatestRequest();
+
   useEffect(() => {
-    attendanceApi
-      .get<AttendanceDay[]>("/api/attendance/me", {
-        params: filters,
-      })
-      .then(({ data }) => {
-        setAttendance(data);
-      })
-      .catch((err: unknown) => {
-        const status = isAxiosError(err) ? err.response?.status : undefined;
-        setError(
-          status === 403
-            ? "Akses ditolak."
-            : status === 400
-              ? "Rentang tanggal tidak valid."
-              : "Gagal memuat riwayat absensi. Silakan coba lagi.",
-        );
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [filters, reload]);
+    void runRequest(
+      () =>
+        attendanceApi.get<AttendanceDay[]>("/api/attendance/me", {
+          params: filters,
+        }),
+      {
+        onSuccess: ({ data }) => {
+          setAttendance(data);
+        },
+        onError: (err: unknown) => {
+          const status = isAxiosError(err) ? err.response?.status : undefined;
+          setError(
+            status === 403
+              ? "Akses ditolak."
+              : status === 400
+                ? "Rentang tanggal tidak valid."
+                : "Gagal memuat riwayat absensi. Silakan coba lagi.",
+          );
+        },
+        onFinally: () => {
+          setLoading(false);
+        },
+      },
+    );
+    return cancelRequest;
+  }, [filters, reload, runRequest, cancelRequest]);
 
   return (
     <PageWrapper title="Summary Absen" subtitle="Lihat riwayat absensi.">

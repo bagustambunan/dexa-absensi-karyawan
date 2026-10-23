@@ -1,3 +1,4 @@
+import { useLatestRequest } from "../../../hooks/useLatestRequest";
 import { useEffect, useState } from "react";
 import { SearchOutlined } from "@ant-design/icons";
 import {
@@ -32,28 +33,36 @@ export default function AttendanceMonitoring() {
   const [reload, setReload] = useState(0);
   const [filters, setFilters] = useState<AttendanceMonitoringFilters>({});
 
+  const { runRequest, cancelRequest } = useLatestRequest();
+
   useEffect(() => {
-    Promise.all([
-      attendanceApi.get<Attendance[]>("/api/admin/attendance", {
-        params: filters,
-      }),
-      employeeApi.get<Employee[]>("/api/admin/employees"),
-    ])
-      .then(([attendanceResponse, employeesResponse]) => {
-        setAttendance(attendanceResponse.data);
-        setEmployees(employeesResponse.data);
-      })
-      .catch((err: unknown) => {
-        setError(
-          isAxiosError(err) && err.response?.status === 403
-            ? "Akses ditolak."
-            : "Gagal memuat data absensi dan karyawan. Silakan coba lagi.",
-        );
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [filters, reload]);
+    void runRequest(
+      () =>
+        Promise.all([
+          attendanceApi.get<Attendance[]>("/api/admin/attendance", {
+            params: filters,
+          }),
+          employeeApi.get<Employee[]>("/api/admin/employees"),
+        ]),
+      {
+        onSuccess: ([attendanceResponse, employeesResponse]) => {
+          setAttendance(attendanceResponse.data);
+          setEmployees(employeesResponse.data);
+        },
+        onError: (err: unknown) => {
+          setError(
+            isAxiosError(err) && err.response?.status === 403
+              ? "Akses ditolak."
+              : "Gagal memuat data absensi dan karyawan. Silakan coba lagi.",
+          );
+        },
+        onFinally: () => {
+          setLoading(false);
+        },
+      },
+    );
+    return cancelRequest;
+  }, [filters, reload, runRequest, cancelRequest]);
 
   const employeesById = new Map(
     employees.map((employee) => [employee.id, employee]),

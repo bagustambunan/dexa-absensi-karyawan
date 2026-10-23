@@ -1,3 +1,4 @@
+import { useLatestRequest } from "../../../hooks/useLatestRequest";
 import { useEffect, useState } from "react";
 import {
   EditOutlined,
@@ -85,23 +86,26 @@ export default function EmployeeManagement() {
   const [filters, setFilters] = useState<Filters>({});
   const [status, setStatus] = useState<Status>("all");
 
+  const { runRequest, cancelRequest } = useLatestRequest();
+
   useEffect(() => {
-    employeeApi
-      .get<Employee[]>("/api/admin/employees")
-      .then(({ data }) => {
+    void runRequest(() => employeeApi.get<Employee[]>("/api/admin/employees"), {
+      onSuccess: ({ data }) => {
         setEmployees(data);
-      })
-      .catch((err: unknown) => {
+      },
+      onError: (err: unknown) => {
         setError(
           isAxiosError(err) && err.response?.status === 403
             ? "Akses ditolak."
             : "Gagal memuat daftar karyawan. Silakan coba lagi.",
         );
-      })
-      .finally(() => {
+      },
+      onFinally: () => {
         setLoading(false);
-      });
-  }, [reload]);
+      },
+    });
+    return cancelRequest;
+  }, [reload, runRequest, cancelRequest]);
 
   const activeCount = employees.filter((employee) => employee.isActive).length;
   const filteredEmployees = employees.filter(

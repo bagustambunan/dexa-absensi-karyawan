@@ -20,6 +20,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { employeeApi, getAvatarSrc } from "../../api/employee-api";
 import type { EmployeeProfileData } from "../../pages/EmployeePortal/type";
+import { useLatestRequest } from "../../hooks/useLatestRequest";
 
 const EMPLOYEE_PORTAL_PATH = "/employee-portal";
 const HRD_PORTAL_PATH = "/hrd-portal";
@@ -74,19 +75,22 @@ function Sidebar({ portal = "employee" }: { portal?: "employee" | "hrd" }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<EmployeeProfileData | null>(null);
+  const { runRequest, cancelRequest } = useLatestRequest();
   useEffect(() => {
     if (portal !== "employee") return;
     const refresh = () => {
-      employeeApi
-        .get<EmployeeProfileData>("/api/me")
-        .then(({ data }) => setProfile(data))
-        .catch(() => setProfile(null));
+      void runRequest(() => employeeApi.get<EmployeeProfileData>("/api/me"), {
+        onSuccess: ({ data }) => setProfile(data),
+        onError: () => setProfile(null),
+      });
     };
     refresh();
     window.addEventListener("employee-profile-updated", refresh);
-    return () =>
+    return () => {
+      cancelRequest();
       window.removeEventListener("employee-profile-updated", refresh);
-  }, [portal]);
+    };
+  }, [portal, runRequest, cancelRequest]);
   const fullName =
     (portal === "employee" ? profile?.fullName : undefined) ?? getUserName();
   const initials = fullName
