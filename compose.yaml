@@ -1,5 +1,23 @@
 name: dexa-absensi-karyawan
 
+x-api-environment: &api-environment
+  MYSQL_HOST: mysql
+  MYSQL_PORT: 3306
+  MYSQL_USER: absensi_karyawan
+  MYSQL_PASSWORD: ${MYSQL_PASSWORD:-absensi_karyawan_local}
+  EMPLOYEE_DB_NAME: employee_db
+  ATTENDANCE_DB_NAME: attendance_db
+  AUDIT_DB_NAME: audit_db
+  JWT_SECRET: ${JWT_SECRET:-dexa-local-demo-secret-change-for-deployment}
+  FRONTEND_URL: http://localhost:${FRONTEND_PORT:-5173}
+
+x-api-healthcheck: &api-healthcheck
+  test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:'+process.env.PORT+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+  interval: 10s
+  timeout: 5s
+  retries: 12
+  start_period: 30s
+
 services:
   mysql:
     image: mysql:8.4
@@ -39,8 +57,78 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
-      start_period: 30s
+      start_period: 60s
+
+  attendance-setup:
+    image: ${COMPOSE_PROJECT_NAME:-dexa-absensi-karyawan}-attendance-api
+    build: ./attendance-api
+    environment: *api-environment
+    command: ["npm", "run", "migration:run"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  employee-setup:
+    image: ${COMPOSE_PROJECT_NAME:-dexa-absensi-karyawan}-employee-api
+    build: ./employee-api
+    environment: *api-environment
+    command: ["sh", "-c", "npm run migration:run && npm run migration:audit && npm run seed"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+      attendance-setup:
+        condition: service_completed_successfully
+
+  employee-api:
+    image: ${COMPOSE_PROJECT_NAME:-dexa-absensi-karyawan}-employee-api
+    build: ./employee-api
+    environment:
+      <<: *api-environment
+      PORT: 3001
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-dexa}:${RABBITMQ_PASSWORD:-dexa_local}@rabbitmq:5672
+      UPLOAD_DIR: /data/uploads
+    ports:
+      - "127.0.0.1:${EMPLOYEE_API_PORT:-3001}:3001"
+    volumes:
+      - uploads:/data/uploads
+    healthcheck: *api-healthcheck
+    depends_on:
+      employee-setup:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+
+  attendance-api:
+    image: ${COMPOSE_PROJECT_NAME:-dexa-absensi-karyawan}-attendance-api
+    build: ./attendance-api
+    environment:
+      <<: *api-environment
+      PORT: 3002
+    ports:
+      - "127.0.0.1:${ATTENDANCE_API_PORT:-3002}:3002"
+    healthcheck: *api-healthcheck
+    depends_on:
+      employee-setup:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_EMPLOYEE_API_URL: http://localhost:${EMPLOYEE_API_PORT:-3001}
+        VITE_ATTENDANCE_API_URL: http://localhost:${ATTENDANCE_API_PORT:-3002}
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-5173}:5173"
+    healthcheck:
+      <<: *api-healthcheck
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5173').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+    depends_on:
+      employee-api:
+        condition: service_healthy
+      attendance-api:
+        condition: service_healthy
 
 volumes:
   mysql_data:
   rabbitmq_data:
+  uploads:

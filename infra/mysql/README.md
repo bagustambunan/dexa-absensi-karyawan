@@ -1,8 +1,8 @@
 ﻿# MySQL lokal
 
-Satu server MySQL 8.4 untuk `employee_db`, `attendance_db`, dan `audit_db`.
+MySQL 8.4 dipakai untuk `employee_db`, `attendance_db`, dan `audit_db`. Setup Docker lengkap menjalankan migration dan seed otomatis. Lihat [README utama](../../README.md).
 
-Dari root:
+Untuk menjalankan MySQL saja, dari root proyek:
 
 ```sh
 docker compose up -d --wait mysql
@@ -18,18 +18,14 @@ User: absensi_karyawan
 Password: absensi_karyawan_local
 ```
 
-Konfig ada di `.env`. Kalau port 3307 sudah dipakai, ubah `MYSQL_PORT`.
+Container aplikasi memakai `mysql:3306`. Port 3307 hanya untuk akses dari host. Ubah `MYSQL_PORT` di `.env` jika port host sudah dipakai.
 
-`init.sql` dijalankan saat volume masih kosong. Nama database dan user juga tertulis di `init.sql` dan `compose.yaml`. Kalau menggantinya di `.env`, sesuaikan kedua file itu sebelum setup pertama.
+`init.sql` dijalankan saat volume masih kosong. Nama database dan user juga tertulis di `compose.yaml`. Jika menggantinya, sesuaikan konfigurasi aplikasi dan SQL sebelum setup pertama.
 
 Mengganti password di `.env` tidak mengubah password database yang sudah dibuat.
-
-Data disimpan di volume Docker. Untuk menghentikan MySQL tanpa menghapus data:
 
 ```sh
 docker compose stop mysql
 ```
 
-`docker compose down -v` menghapus volume dan datanya.
-
-Migrasi, seed, dan cara menjalankan aplikasi ada di [README utama](../../README.md).
+Data tetap ada di volume. `docker compose down -v` menghapus semua volume proyek, termasuk data MySQL.
