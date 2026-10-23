@@ -9,6 +9,7 @@
   "scripts": {
     "migration:run": "node --loader ts-node/esm ./node_modules/typeorm/cli.js migration:run -d src/database/employee.data-source.ts",
     "migration:audit": "node --loader ts-node/esm ./node_modules/typeorm/cli.js migration:run -d src/database/audit.data-source.ts",
+    "smoke:rabbitmq": "node scripts/rabbitmq-smoke.mjs",
     "build": "nest build",
     "deploy": "nest deploy",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -30,6 +31,7 @@
     "@nestjs/jwt": "^12.0.3",
     "@nestjs/platform-express": "^12.0.1",
     "@nestjs/typeorm": "^12.0.2",
+    "amqplib": "^2.2.0",
     "bcrypt": "^6.0.0",
     "dotenv": "^18.0.8",
     "mysql2": "^3.24.6",
