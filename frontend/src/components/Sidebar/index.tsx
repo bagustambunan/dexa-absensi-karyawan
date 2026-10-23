@@ -1,3 +1,4 @@
+import { isAxiosError } from "axios";
 import {
   BarChartOutlined,
   CalendarOutlined,
@@ -8,6 +9,7 @@ import {
 } from "@ant-design/icons";
 import {
   Avatar,
+  message,
   Button,
   Flex,
   Layout,
@@ -81,7 +83,12 @@ function Sidebar({ portal = "employee" }: { portal?: "employee" | "hrd" }) {
     const refresh = () => {
       void runRequest(() => employeeApi.get<EmployeeProfileData>("/api/me"), {
         onSuccess: ({ data }) => setProfile(data),
-        onError: () => setProfile(null),
+        onError: (error: unknown) => {
+          setProfile(null);
+          if (isAxiosError(error) && error.response?.status === 403) {
+            void message.error("Akses profil ditolak.");
+          }
+        },
       });
     };
     refresh();

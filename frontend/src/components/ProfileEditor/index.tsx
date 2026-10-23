@@ -32,7 +32,11 @@ import type {
 function showSaveError(error: unknown, fallback: string) {
   if (isAxiosError(error)) {
     const status = error.response?.status;
-    if (status === 401 || status === 403) return;
+    if (status === 401) return;
+    if (status === 403) {
+      void message.error("Akses ditolak.");
+      return;
+    }
     if (status === 400 && typeof error.response?.data?.message === "string") {
       void message.error(error.response.data.message);
       return;

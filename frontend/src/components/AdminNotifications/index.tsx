@@ -50,6 +50,9 @@ export default function AdminNotifications() {
           [401, 403].includes(error.response?.status ?? 0)
         ) {
           stopped = true;
+          if (error.response?.status === 403) {
+            void messageApi.error("Akses notifikasi ditolak.");
+          }
         }
       } finally {
         if (!stopped && sessionStorage.getItem("accessToken")) {
