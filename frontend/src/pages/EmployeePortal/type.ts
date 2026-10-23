@@ -20,3 +20,5 @@ export type EmployeeProfileData = {
   phone: string;
   avatarUrl: string | null;
 };
+
+export type PasswordValues = { currentPassword: string; newPassword: string };

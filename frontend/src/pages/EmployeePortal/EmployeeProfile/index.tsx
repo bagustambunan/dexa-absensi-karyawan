@@ -14,26 +14,44 @@ import {
   Tag,
   Typography,
   Upload,
+  message,
 } from "antd";
 import PageWrapper from "../../../components/PageWrapper";
 
 import { useEffect, useState } from "react";
 import { isAxiosError } from "axios";
 import { employeeApi } from "../../../api/employee-api";
-import type { EmployeeProfileData } from "../type";
+import type { EmployeeProfileData, PasswordValues } from "../type";
+
+function showSaveError(error: unknown, fallback: string) {
+  if (isAxiosError(error)) {
+    const status = error.response?.status;
+    if (status === 401 || status === 403) return;
+    if (status === 400 && typeof error.response?.data?.message === "string") {
+      void message.error(error.response.data.message);
+      return;
+    }
+  }
+  void message.error(fallback);
+}
 
 function EmployeeProfile() {
+  const [phoneForm] = Form.useForm<{ phoneNumber: string }>();
+  const [passwordForm] = Form.useForm<PasswordValues>();
   const [employee, setEmployee] = useState<EmployeeProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
   const [avatarSrc, setAvatarSrc] = useState<string>();
+  const [pending, setPending] = useState<"phone" | "password" | null>(null);
+  const disabled = loading || !employee || pending !== null;
 
   useEffect(() => {
     employeeApi
       .get<EmployeeProfileData>("/api/me")
       .then(({ data }) => {
         setEmployee(data);
+        phoneForm.setFieldsValue({ phoneNumber: data.phone });
         setError("");
       })
       .catch((err: unknown) => {
@@ -45,7 +63,7 @@ function EmployeeProfile() {
         );
       })
       .finally(() => setLoading(false));
-  }, [reload]);
+  }, [reload, phoneForm]);
 
   const avatarUrl = employee?.avatarUrl;
   useEffect(() => {
@@ -67,6 +85,43 @@ function EmployeeProfile() {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [avatarUrl]);
+
+  async function savePhone(values: { phoneNumber: string }) {
+    if (disabled) return;
+    setPending("phone");
+    try {
+      const { data } = await employeeApi.patch<EmployeeProfileData>(
+        "/api/me/phone",
+        {
+          phone: values.phoneNumber.trim(),
+        },
+      );
+      setEmployee(data);
+      phoneForm.setFieldsValue({ phoneNumber: data.phone });
+      void message.success("Nomor handphone berhasil disimpan.");
+    } catch (error: unknown) {
+      showSaveError(
+        error,
+        "Gagal menyimpan nomor handphone. Silakan coba lagi.",
+      );
+    } finally {
+      setPending(null);
+    }
+  }
+
+  async function savePassword(values: PasswordValues) {
+    if (disabled) return;
+    setPending("password");
+    try {
+      await employeeApi.patch("/api/me/password", values);
+      passwordForm.resetFields();
+      void message.success("Password berhasil diubah.");
+    } catch (error: unknown) {
+      showSaveError(error, "Gagal mengubah password. Silakan coba lagi.");
+    } finally {
+      setPending(null);
+    }
+  }
 
   return (
     <PageWrapper title="Profil Karyawan" subtitle="Lihat profil karyawan.">
@@ -172,15 +227,31 @@ function EmployeeProfile() {
             <Card title="Ubah Nomor Handphone">
               <Form
                 layout="vertical"
-                key={employee?.id}
-                disabled={loading || !employee}
-                initialValues={{ phoneNumber: employee?.phone }}
+                form={phoneForm}
+                disabled={disabled}
+                onFinish={savePhone}
               >
-                <Form.Item label="Nomor Handphone" name="phoneNumber">
-                  <Input />
+                <Form.Item
+                  label="Nomor Handphone"
+                  name="phoneNumber"
+                  rules={[
+                    { required: true, message: "Nomor handphone wajib diisi." },
+                    {
+                      pattern: /^\+?[0-9]{8,15}$/,
+                      transform: (value: string | undefined) => value?.trim(),
+                      message: "Gunakan 8–15 digit, boleh diawali +.",
+                    },
+                  ]}
+                >
+                  <Input type="tel" autoComplete="tel" />
                 </Form.Item>
                 <Flex justify="flex-end">
-                  <Button type="primary" icon={<SaveOutlined />}>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={pending === "phone"}
+                    icon={<SaveOutlined />}
+                  >
                     Simpan Nomor
                   </Button>
                 </Flex>
@@ -188,15 +259,49 @@ function EmployeeProfile() {
             </Card>
 
             <Card title="Ubah Password">
-              <Form layout="vertical">
-                <Form.Item label="Password Saat Ini" name="currentPassword">
-                  <Input.Password />
+              <Form
+                layout="vertical"
+                form={passwordForm}
+                disabled={disabled}
+                onFinish={savePassword}
+              >
+                <Form.Item
+                  label="Password Saat Ini"
+                  name="currentPassword"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Password saat ini wajib diisi.",
+                    },
+                  ]}
+                >
+                  <Input.Password autoComplete="current-password" />
                 </Form.Item>
-                <Form.Item label="Password Baru" name="newPassword">
-                  <Input.Password />
+                <Form.Item
+                  label="Password Baru"
+                  name="newPassword"
+                  rules={[
+                    { required: true, message: "Password baru wajib diisi." },
+                    { min: 8, message: "Password baru minimal 8 karakter." },
+                    {
+                      validator: (_, value: string | undefined) =>
+                        !value || new TextEncoder().encode(value).length <= 72
+                          ? Promise.resolve()
+                          : Promise.reject(
+                              new Error("Password baru maksimal 72 byte."),
+                            ),
+                    },
+                  ]}
+                >
+                  <Input.Password autoComplete="new-password" />
                 </Form.Item>
                 <Flex justify="flex-end">
-                  <Button type="primary" icon={<SaveOutlined />}>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={pending === "password"}
+                    icon={<SaveOutlined />}
+                  >
                     Ubah Password
                   </Button>
                 </Flex>
