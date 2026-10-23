@@ -9,6 +9,9 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import type { Request } from 'express';
 
 
@@ -24,6 +27,8 @@ export class JwtAuthGuard implements CanActivate {
   constructor(
     @Inject(JwtService) private readonly jwt: JwtService,
     @Inject(Reflector) private readonly reflector: Reflector,
+    @InjectDataSource() private readonly dataSource: DataSource,
+    @Inject(ConfigService) private readonly config: ConfigService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -62,6 +67,17 @@ export class JwtAuthGuard implements CanActivate {
     if (roles?.length && !roles.includes(user.role)) {
       throw new ForbiddenException('Role tidak diizinkan');
     }
+    const database = this.dataSource.driver.escape(
+      this.config.getOrThrow<string>('EMPLOYEE_DB_NAME'),
+    );
+    const accounts: { id: string }[] = await this.dataSource.query(
+      `SELECT id FROM ${database}.\`employees\` WHERE id = ? AND is_active = 1 AND role = ? LIMIT 1`,
+      [user.sub, user.role],
+    );
+    if (!accounts.length) {
+      throw new UnauthorizedException('Akun tidak aktif atau tidak tersedia');
+    }
+
     request.user = user;
     return true;
   }
