@@ -31,29 +31,32 @@ export default function AttendanceMonitoring() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
+  const [employeesLoading, setEmployeesLoading] = useState(true);
+  const [employeesError, setEmployeesError] = useState("");
+  const [employeesReload, setEmployeesReload] = useState(0);
   const [filters, setFilters] = useState<AttendanceMonitoringFilters>({});
 
   const { runRequest, cancelRequest } = useLatestRequest();
+  const {
+    runRequest: runEmployeesRequest,
+    cancelRequest: cancelEmployeesRequest,
+  } = useLatestRequest();
 
   useEffect(() => {
     void runRequest(
       () =>
-        Promise.all([
-          attendanceApi.get<Attendance[]>("/api/admin/attendance", {
-            params: filters,
-          }),
-          employeeApi.get<Employee[]>("/api/admin/employees"),
-        ]),
+        attendanceApi.get<Attendance[]>("/api/admin/attendance", {
+          params: filters,
+        }),
       {
-        onSuccess: ([attendanceResponse, employeesResponse]) => {
-          setAttendance(attendanceResponse.data);
-          setEmployees(employeesResponse.data);
+        onSuccess: ({ data }) => {
+          setAttendance(data);
         },
         onError: (err: unknown) => {
           setError(
             isAxiosError(err) && err.response?.status === 403
               ? "Akses ditolak."
-              : "Gagal memuat data absensi dan karyawan. Silakan coba lagi.",
+              : "Gagal memuat data absensi. Silakan coba lagi.",
           );
         },
         onFinally: () => {
@@ -63,6 +66,28 @@ export default function AttendanceMonitoring() {
     );
     return cancelRequest;
   }, [filters, reload, runRequest, cancelRequest]);
+
+  useEffect(() => {
+    void runEmployeesRequest(
+      () => employeeApi.get<Employee[]>("/api/admin/employees"),
+      {
+        onSuccess: ({ data }) => {
+          setEmployees(data);
+        },
+        onError: (err: unknown) => {
+          setEmployeesError(
+            isAxiosError(err) && err.response?.status === 403
+              ? "Akses daftar karyawan ditolak. Absensi tetap ditampilkan dengan ID karyawan."
+              : "Gagal memuat daftar karyawan. Absensi tetap ditampilkan dengan ID karyawan.",
+          );
+        },
+        onFinally: () => {
+          setEmployeesLoading(false);
+        },
+      },
+    );
+    return cancelEmployeesRequest;
+  }, [employeesReload, runEmployeesRequest, cancelEmployeesRequest]);
 
   const employeesById = new Map(
     employees.map((employee) => [employee.id, employee]),
@@ -106,6 +131,26 @@ export default function AttendanceMonitoring() {
     >
       <Card title="Daftar Absensi">
         <Space orientation="vertical" size={16} style={{ width: "100%" }}>
+          {employeesError && (
+            <Alert
+              type="warning"
+              title={employeesError}
+              showIcon
+              role="alert"
+              action={
+                <Button
+                  loading={employeesLoading}
+                  onClick={() => {
+                    setEmployeesLoading(true);
+                    setEmployeesError("");
+                    setEmployeesReload((value) => value + 1);
+                  }}
+                >
+                  Muat ulang karyawan
+                </Button>
+              }
+            />
+          )}
           {error && (
             <Alert
               type="error"
@@ -145,7 +190,7 @@ export default function AttendanceMonitoring() {
                 allowClear
                 showSearch={{ optionFilterProp: "label" }}
                 placeholder="Semua karyawan"
-                loading={loading}
+                loading={employeesLoading}
                 style={{ minWidth: 220 }}
                 options={employees.map((employee) => ({
                   value: employee.id,
