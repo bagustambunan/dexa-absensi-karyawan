@@ -87,11 +87,7 @@ export default function EmployeeManagement() {
 
   useEffect(() => {
     employeeApi
-      .get<Employee[]>("/api/admin/employees", {
-        params: {
-          isActive: status === "all" ? undefined : status === "active",
-        },
-      })
+      .get<Employee[]>("/api/admin/employees")
       .then(({ data }) => {
         setEmployees(data);
       })
@@ -105,14 +101,17 @@ export default function EmployeeManagement() {
       .finally(() => {
         setLoading(false);
       });
-  }, [reload, status]);
+  }, [reload]);
 
-  const filteredEmployees = employees.filter((employee) =>
-    (Object.keys(filters) as (keyof Filters)[]).every((key) =>
-      employee[key]
-        .toLowerCase()
-        .includes((filters[key] ?? "").trim().toLowerCase()),
-    ),
+  const activeCount = employees.filter((employee) => employee.isActive).length;
+  const filteredEmployees = employees.filter(
+    (employee) =>
+      (status === "all" || employee.isActive === (status === "active")) &&
+      (Object.keys(filters) as (keyof Filters)[]).every((key) =>
+        employee[key]
+          .toLowerCase()
+          .includes((filters[key] ?? "").trim().toLowerCase()),
+      ),
   );
 
   return (
@@ -126,6 +125,22 @@ export default function EmployeeManagement() {
             <Statistic
               title="Total Karyawan"
               value={loading || error ? "-" : employees.length}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} md={8}>
+          <Card>
+            <Statistic
+              title="Total Karyawan Aktif"
+              value={loading || error ? "-" : activeCount}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} md={8}>
+          <Card>
+            <Statistic
+              title="Total Karyawan Nonaktif"
+              value={loading || error ? "-" : employees.length - activeCount}
             />
           </Card>
         </Col>
@@ -165,11 +180,7 @@ export default function EmployeeManagement() {
             initialValues={{ status: "all" }}
             onFinish={({ status: nextStatus, ...textFilters }) => {
               setFilters(textFilters);
-              if (nextStatus !== status) {
-                setLoading(true);
-                setError("");
-                setStatus(nextStatus);
-              }
+              setStatus(nextStatus);
             }}
           >
             <Row gutter={[12, 12]}>
