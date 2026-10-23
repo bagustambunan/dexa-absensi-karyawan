@@ -27,6 +27,7 @@ import type {
 import AttendanceTable from "../../../components/AttendanceTable";
 
 export default function AttendanceMonitoring() {
+  const [form] = Form.useForm<AttendanceMonitoringFormValues>();
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -178,6 +179,7 @@ export default function AttendanceMonitoring() {
             />
           )}
           <Form<AttendanceMonitoringFormValues>
+            form={form}
             layout="inline"
             onFinish={(values) => {
               setLoading(true);
@@ -213,6 +215,17 @@ export default function AttendanceMonitoring() {
                 loading={loading}
               >
                 Cari
+              </Button>
+              <Button
+                style={{ marginLeft: 8 }}
+                onClick={() => {
+                  form.resetFields();
+                  setLoading(true);
+                  setError("");
+                  setFilters({});
+                }}
+              >
+                Reset
               </Button>
             </Form.Item>
           </Form>

@@ -80,6 +80,7 @@ const columns: TableProps<Employee>["columns"] = [
 ];
 
 export default function EmployeeManagement() {
+  const [form] = Form.useForm<Filters & { status: Status }>();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -185,6 +186,7 @@ export default function EmployeeManagement() {
             />
           )}
           <Form<Filters & { status: Status }>
+            form={form}
             initialValues={{ status: "all" }}
             onFinish={({ status: nextStatus, ...textFilters }) => {
               setFilters(textFilters);
@@ -233,6 +235,16 @@ export default function EmployeeManagement() {
                     icon={<SearchOutlined />}
                   >
                     Cari
+                  </Button>
+                  <Button
+                    style={{ marginLeft: 8 }}
+                    onClick={() => {
+                      form.resetFields();
+                      setFilters({});
+                      setStatus("all");
+                    }}
+                  >
+                    Reset
                   </Button>
                 </Form.Item>
               </Col>

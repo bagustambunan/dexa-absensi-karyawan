@@ -16,6 +16,7 @@ import type {
 } from "../type";
 
 export default function EmployeeAttendanceSummary() {
+  const [form] = Form.useForm<AttendanceFilterValues>();
   const [attendance, setAttendance] = useState<AttendanceDay[]>([]);
   const [initialFilters] = useState(() => {
     const today = workDateFormat.format(new Date());
@@ -83,6 +84,7 @@ export default function EmployeeAttendanceSummary() {
             />
           )}
           <Form<AttendanceFilterValues>
+            form={form}
             layout="inline"
             initialValues={{
               dates: [dayjs(initialFilters.from), dayjs(initialFilters.to)],
@@ -92,14 +94,17 @@ export default function EmployeeAttendanceSummary() {
               const to = values.dates?.[1];
               setLoading(true);
               setError("");
-              setFilters(
+              const nextFilters =
                 from && to
                   ? {
                       from: from.format("YYYY-MM-DD"),
                       to: to.format("YYYY-MM-DD"),
                     }
-                  : {},
-              );
+                  : { ...initialFilters };
+              form.setFieldsValue({
+                dates: [dayjs(nextFilters.from), dayjs(nextFilters.to)],
+              });
+              setFilters(nextFilters);
             }}
           >
             <Form.Item label="Pilih Tanggal" name="dates">
@@ -113,6 +118,17 @@ export default function EmployeeAttendanceSummary() {
                 loading={loading}
               >
                 Cari
+              </Button>
+              <Button
+                style={{ marginLeft: 8 }}
+                onClick={() => {
+                  form.resetFields();
+                  setLoading(true);
+                  setError("");
+                  setFilters({ ...initialFilters });
+                }}
+              >
+                Reset
               </Button>
             </Form.Item>
           </Form>
