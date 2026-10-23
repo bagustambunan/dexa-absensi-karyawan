@@ -35,7 +35,7 @@ export class ProfileNotification {
     type: 'varchar',
     length: 30,
   })
-  changedField!: string;
+  changedField!: 'PHOTO' | 'PHONE' | 'PASSWORD';
 
   @CreateDateColumn({
     name: 'created_at_utc',

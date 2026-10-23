@@ -7,6 +7,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   NotFoundException,
   Param,
   Patch,
@@ -25,6 +26,7 @@ import { randomUUID } from 'node:crypto';
 import { hash } from 'bcrypt';
 import { JwtAuthGuard, Roles } from '../auth/jwt-auth.guard.ts';
 import { Employee } from './employee.entity.ts';
+import { ProfileChangesService } from './profile-changes.service.ts';
 
 const employeeFields: FindOptionsSelect<Employee> = {
   id: true,
@@ -42,6 +44,8 @@ export class AdminEmployeesController {
   constructor(
     @InjectRepository(Employee)
     private readonly employees: Repository<Employee>,
+    @Inject(ProfileChangesService)
+    private readonly profileChanges: ProfileChangesService,
   ) {}
 
   @Post()
@@ -153,7 +157,7 @@ export class AdminEmployeesController {
       throw new ConflictException('Email sudah digunakan');
     }
     try {
-      await this.employees.update({ id, role: 'EMPLOYEE' }, changes);
+      await this.profileChanges.update(id, changes, 'EMPLOYEE');
     } catch (error) {
       if (
         error instanceof QueryFailedError &&
