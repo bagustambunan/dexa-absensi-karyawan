@@ -19,7 +19,7 @@ export class ProfileChangesService {
     changes: ProfileChanges,
     role?: Employee['role'],
     options: { requireActive?: boolean; currentPassword?: string } = {},
-  ): Promise<void> {
+  ): Promise<{ previousAvatarPath: string | null }> {
     if (changes.password !== undefined && (
       typeof changes.password !== 'string' || changes.password.length < 8 ||
       Buffer.byteLength(changes.password, 'utf8') > 72
@@ -27,7 +27,7 @@ export class ProfileChangesService {
       throw new BadRequestException('Password minimal 8 karakter dan maksimal 72 byte');
     }
 
-    await this.dataSource.transaction(async (manager) => {
+    return this.dataSource.transaction(async (manager) => {
       const employee = await manager.findOne(Employee, {
         where: {
           id,
@@ -61,7 +61,7 @@ export class ProfileChangesService {
         updates.passwordHash = await hash(changes.password, 12);
         fields.push('PASSWORD');
       }
-      if (!Object.keys(updates).length) return;
+      if (!Object.keys(updates).length) return { previousAvatarPath: employee.avatarPath };
 
       await manager.update(Employee, { id }, updates);
       for (const changedField of fields) {
@@ -70,6 +70,7 @@ export class ProfileChangesService {
           createdAtUtc: () => 'UTC_TIMESTAMP(3)',
         });
       }
+      return { previousAvatarPath: employee.avatarPath };
     });
   }
 }

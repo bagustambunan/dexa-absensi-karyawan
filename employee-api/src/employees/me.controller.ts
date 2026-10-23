@@ -26,7 +26,7 @@ import { Repository } from 'typeorm';
 import { JwtAuthGuard, Roles, type AuthenticatedRequest } from '../auth/jwt-auth.guard.ts';
 import { Employee } from './employee.entity.ts';
 import { ProfileChangesService } from './profile-changes.service.ts';
-import { avatarUrl, readAvatarFile, uploadDirectory } from './avatar-files.ts';
+import { avatarUrl, isAvatarFileName, readAvatarFile, uploadDirectory } from './avatar-files.ts';
 
 @Controller('me')
 @UseGuards(JwtAuthGuard)
@@ -37,7 +37,7 @@ export class MeController {
     private readonly employees: Repository<Employee>,
     @Inject(ProfileChangesService)
     private readonly profileChanges: ProfileChangesService,
-  ) {}
+  ) { }
 
   private async activeEmployee(id: string) {
     const employee = await this.employees.findOne({
@@ -134,16 +134,24 @@ export class MeController {
     await mkdir(directory, { recursive: true });
     const path = join(directory, fileName);
     await writeFile(path, file.buffer, { flag: 'wx' });
+    let previousAvatarPath: string | null;
     try {
-      await this.profileChanges.update(
+      const previous = await this.profileChanges.update(
         request.user.sub,
         { avatarPath: fileName },
         'EMPLOYEE',
         { requireActive: true },
       );
+      previousAvatarPath = previous.previousAvatarPath;
     } catch (error) {
       await unlink(path);
       throw error;
+    }
+    if (previousAvatarPath && previousAvatarPath !== fileName && isAvatarFileName(previousAvatarPath)) {
+      try {
+        await unlink(join(directory, previousAvatarPath));
+      } catch {
+      }
     }
     return { avatarUrl: avatarUrl(fileName) };
   }
