@@ -5,6 +5,10 @@ export const employeeApi = axios.create({
   baseURL: import.meta.env.VITE_EMPLOYEE_API_URL,
 });
 
+export function getAvatarSrc(avatarUrl?: string | null) {
+  return avatarUrl ? employeeApi.getUri({ url: avatarUrl }) : undefined;
+}
+
 employeeApi.interceptors.request.use((config) => {
   const accessToken = sessionStorage.getItem("accessToken");
   if (accessToken) {

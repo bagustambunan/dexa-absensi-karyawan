@@ -22,7 +22,7 @@ import PageWrapper from "../../../components/PageWrapper";
 
 import { useEffect, useState } from "react";
 import { isAxiosError } from "axios";
-import { employeeApi } from "../../../api/employee-api";
+import { employeeApi, getAvatarSrc } from "../../../api/employee-api";
 import type { EmployeeProfileData, PasswordValues } from "../type";
 
 function showSaveError(error: unknown, fallback: string) {
@@ -44,7 +44,6 @@ function EmployeeProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
-  const [avatarSrc, setAvatarSrc] = useState<string>();
   const [photo, setPhoto] = useState<UploadFile | null>(null);
   const [pending, setPending] = useState<
     "phone" | "password" | "avatar" | null
@@ -77,27 +76,6 @@ function EmployeeProfile() {
       .finally(() => setLoading(false));
   }, [reload, phoneForm]);
 
-  const avatarUrl = employee?.avatarUrl;
-  useEffect(() => {
-    if (!avatarUrl) return;
-    let active = true;
-    let objectUrl: string | undefined;
-    employeeApi
-      .get<Blob>(avatarUrl, { responseType: "blob" })
-      .then(({ data }) => {
-        if (!active) return;
-        objectUrl = URL.createObjectURL(data);
-        setAvatarSrc(objectUrl);
-      })
-      .catch(() => {
-        if (active) setAvatarSrc(undefined);
-      });
-    return () => {
-      active = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [avatarUrl]);
-
   async function saveAvatar() {
     if (disabled || !photo?.originFileObj) return;
     setPending("avatar");
@@ -105,6 +83,7 @@ function EmployeeProfile() {
     body.append("file", photo.originFileObj);
     try {
       await employeeApi.post("/api/me/avatar", body);
+      window.dispatchEvent(new Event("employee-profile-updated"));
       setPhoto(null);
       void message.success("Foto berhasil disimpan.");
       setLoading(true);
@@ -186,7 +165,7 @@ function EmployeeProfile() {
               <Space size="large" align="center">
                 <Avatar
                   size={104}
-                  src={avatarSrc}
+                  src={getAvatarSrc(employee?.avatarUrl)}
                   icon={<UserOutlined />}
                   alt={employee?.fullName}
                 />

@@ -17,6 +17,9 @@ import {
   type MenuProps,
 } from "antd";
 import { Link, useLocation, useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { employeeApi, getAvatarSrc } from "../../api/employee-api";
+import type { EmployeeProfileData } from "../../pages/EmployeePortal/type";
 
 const EMPLOYEE_PORTAL_PATH = "/employee-portal";
 const HRD_PORTAL_PATH = "/hrd-portal";
@@ -70,7 +73,22 @@ const hrdMenuItems: MenuProps["items"] = [
 function Sidebar({ portal = "employee" }: { portal?: "employee" | "hrd" }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const fullName = getUserName();
+  const [profile, setProfile] = useState<EmployeeProfileData | null>(null);
+  useEffect(() => {
+    if (portal !== "employee") return;
+    const refresh = () => {
+      employeeApi
+        .get<EmployeeProfileData>("/api/me")
+        .then(({ data }) => setProfile(data))
+        .catch(() => setProfile(null));
+    };
+    refresh();
+    window.addEventListener("employee-profile-updated", refresh);
+    return () =>
+      window.removeEventListener("employee-profile-updated", refresh);
+  }, [portal]);
+  const fullName =
+    (portal === "employee" ? profile?.fullName : undefined) ?? getUserName();
   const initials = fullName
     .split(/\s+/)
     .slice(0, 2)
@@ -129,7 +147,17 @@ function Sidebar({ portal = "employee" }: { portal?: "employee" | "hrd" }) {
           style={{ width: "100%", padding: 16 }}
         >
           <Space>
-            <Avatar style={{ flexShrink: 0 }}>{initials}</Avatar>
+            <Avatar
+              src={
+                portal === "employee"
+                  ? getAvatarSrc(profile?.avatarUrl)
+                  : undefined
+              }
+              alt={fullName}
+              style={{ flexShrink: 0 }}
+            >
+              {initials}
+            </Avatar>
             <Typography.Text
               strong
               ellipsis

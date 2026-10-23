@@ -16,7 +16,7 @@ import {
 import { isAxiosError } from "axios";
 import PageWrapper from "../../../components/PageWrapper";
 import { attendanceApi } from "../../../api/attendance-api";
-import { employeeApi } from "../../../api/employee-api";
+import { employeeApi, getAvatarSrc } from "../../../api/employee-api";
 import type {
   Attendance,
   AttendanceMonitoringFilters,
@@ -64,10 +64,11 @@ export default function AttendanceMonitoring() {
       title: "Karyawan",
       key: "employee",
       render: (_, record) => {
-        const name = employeesById.get(record.employeeId)?.fullName;
+        const employee = employeesById.get(record.employeeId);
+        const name = employee?.fullName;
         return (
           <Space>
-            <Avatar>
+            <Avatar src={getAvatarSrc(employee?.avatarUrl)} alt={name}>
               {(name ?? record.employeeId)
                 .trim()
                 .split(/\s+/)

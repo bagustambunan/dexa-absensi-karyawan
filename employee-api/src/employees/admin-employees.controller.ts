@@ -27,6 +27,7 @@ import { hash } from 'bcrypt';
 import { JwtAuthGuard, Roles } from '../auth/jwt-auth.guard.ts';
 import { Employee } from './employee.entity.ts';
 import { ProfileChangesService } from './profile-changes.service.ts';
+import { avatarUrl } from './avatar-files.ts';
 
 const employeeFields: FindOptionsSelect<Employee> = {
   id: true,
@@ -35,7 +36,12 @@ const employeeFields: FindOptionsSelect<Employee> = {
   position: true,
   phone: true,
   isActive: true,
+  avatarPath: true,
 };
+
+function publicEmployee({ avatarPath, ...employee }: Employee) {
+  return { ...employee, avatarUrl: avatarPath ? avatarUrl(avatarPath) : null };
+}
 
 @Controller('admin/employees')
 @UseGuards(JwtAuthGuard)
@@ -110,7 +116,7 @@ export class AdminEmployeesController {
       }
       throw error;
     }
-    return { id, fullName, email, position, phone, isActive: true };
+    return { id, fullName, email, position, phone, isActive: true, avatarUrl: null };
   }
 
   @Patch(':id')
@@ -171,11 +177,11 @@ export class AdminEmployeesController {
   }
 
   @Get()
-  list(@Query('isActive') isActive: unknown) {
+  async list(@Query('isActive') isActive: unknown) {
     if (isActive !== undefined && isActive !== 'true' && isActive !== 'false') {
       throw new BadRequestException('isActive harus true atau false');
     }
-    return this.employees.find({
+    const employees = await this.employees.find({
       where: {
         role: 'EMPLOYEE',
         ...(isActive === undefined ? {} : { isActive: isActive === 'true' }),
@@ -183,6 +189,7 @@ export class AdminEmployeesController {
       select: employeeFields,
       order: { fullName: 'ASC', id: 'ASC' },
     });
+    return employees.map(publicEmployee);
   }
 
   @Delete(':id')
@@ -199,6 +206,6 @@ export class AdminEmployeesController {
       select: employeeFields,
     });
     if (!employee) throw new NotFoundException('Karyawan tidak ditemukan');
-    return employee;
+    return publicEmployee(employee);
   }
 }

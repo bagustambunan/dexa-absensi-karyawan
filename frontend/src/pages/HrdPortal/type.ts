@@ -7,6 +7,7 @@ export type Employee = {
   position: string;
   phone: string;
   isActive: boolean;
+  avatarUrl: string | null;
 };
 
 export type EmployeeFormValues = Pick<

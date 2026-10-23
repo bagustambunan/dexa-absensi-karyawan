@@ -24,7 +24,7 @@ import {
 import { isAxiosError } from "axios";
 import { Link } from "react-router";
 import PageWrapper from "../../../components/PageWrapper";
-import { employeeApi } from "../../../api/employee-api";
+import { employeeApi, getAvatarSrc } from "../../../api/employee-api";
 import type { Employee } from "../type";
 
 type Filters = Partial<
@@ -38,7 +38,7 @@ const columns: TableProps<Employee>["columns"] = [
     key: "fullName",
     render: (_, employee) => (
       <Space>
-        <Avatar>
+        <Avatar src={getAvatarSrc(employee.avatarUrl)} alt={employee.fullName}>
           {employee.fullName
             .trim()
             .split(/\s+/)
