@@ -13,8 +13,8 @@ function PageWrapper({
   subtitle?: string;
 }) {
   return (
-    <Layout.Content style={{ padding: "24px" }}>
-      <Flex justify="space-between" align="flex-start" gap={16}>
+    <Layout.Content className="page-content">
+      <Flex justify="space-between" align="flex-start" gap={16} wrap>
         <div style={{ marginBottom: "24px" }}>
           <h2 className="page-title">{title}</h2>
           {subtitle && (

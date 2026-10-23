@@ -187,7 +187,7 @@ function ProfileEditor() {
         <Col xs={24} xl={14}>
           <Space orientation="vertical" size={24} className="full-width">
             <Card title="Informasi Karyawan" loading={loading}>
-              <Space size="large" align="center">
+              <Space size="large" align="center" wrap>
                 <Avatar
                   size={104}
                   src={getAvatarSrc(employee?.avatarUrl)}

@@ -290,7 +290,7 @@ function EmployeeEditor({ employeeId }: { employeeId?: string }) {
               </Col>
             )}
           </Row>
-          <Flex justify="flex-end" gap={8}>
+          <Flex justify="flex-end" gap={8} wrap>
             {isEdit && isActive && (
               <Popconfirm
                 title="Nonaktifkan karyawan?"

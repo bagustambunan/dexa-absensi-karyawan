@@ -3,7 +3,9 @@ import {
   BarChartOutlined,
   CalendarOutlined,
   ClockCircleOutlined,
+  CloseOutlined,
   LogoutOutlined,
+  MenuOutlined,
   TeamOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -77,6 +79,8 @@ function Sidebar({ portal = "employee" }: { portal?: "employee" | "hrd" }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<EmployeeProfileData | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const { runRequest, cancelRequest } = useLatestRequest();
   useEffect(() => {
     if (portal !== "employee") return;
@@ -126,16 +130,35 @@ function Sidebar({ portal = "employee" }: { portal?: "employee" | "hrd" }) {
     <Layout.Sider
       width={240}
       theme="light"
+      breakpoint="lg"
+      collapsedWidth={0}
+      collapsed={collapsed}
+      onBreakpoint={(broken) => {
+        setIsMobile(broken);
+        setCollapsed(broken);
+      }}
+      onCollapse={setCollapsed}
+      zeroWidthTriggerStyle={{ top: 16 }}
+      trigger={
+        isMobile ? (
+          <Button
+            type="text"
+            aria-label={collapsed ? "Buka menu" : "Tutup menu"}
+            aria-expanded={!collapsed}
+            icon={collapsed ? <MenuOutlined /> : <CloseOutlined />}
+          />
+        ) : null
+      }
       style={{
         position: "fixed",
         insetInlineStart: 0,
         top: 0,
         bottom: 0,
         height: "100vh",
-        overflow: "hidden",
+        zIndex: 1000,
       }}
     >
-      <Flex vertical style={{ height: "100%" }}>
+      <Flex vertical style={{ height: "100%", overflow: "hidden" }}>
         <Typography.Title level={4} style={{ margin: 0, padding: 24 }}>
           {isHrdPortal ? "Portal HRD" : "Portal Karyawan"}
         </Typography.Title>
@@ -150,6 +173,9 @@ function Sidebar({ portal = "employee" }: { portal?: "employee" | "hrd" }) {
           }}
           items={isHrdPortal ? hrdMenuItems : employeeMenuItems}
           selectedKeys={[selectedPath]}
+          onClick={() => {
+            if (isMobile) setCollapsed(true);
+          }}
         />
 
         <Space

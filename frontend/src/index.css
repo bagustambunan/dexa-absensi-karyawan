@@ -21,9 +21,20 @@ body {
   width: 100%;
 }
 
+.portal-content {
+  min-width: 0;
+  min-height: 100vh;
+  margin-left: 240px;
+  overflow-wrap: anywhere;
+}
+
+.page-content {
+  padding: 24px;
+}
+
 .grid-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -40,4 +51,40 @@ body {
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
+}
+
+@media (max-width: 991px) {
+  .portal-content {
+    margin-left: 0;
+  }
+
+  .portal-content > .page-content {
+    padding: 64px 16px 16px;
+  }
+}
+
+@media (max-width: 767px) {
+  .grid-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .attendance-time {
+    font-size: 36px;
+  }
+
+  .portal-content .ant-card-head-wrapper {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-block: 8px;
+  }
+
+  .ant-picker-dropdown .ant-picker-panels {
+    flex-direction: column;
+  }
+
+  .ant-picker-dropdown .ant-picker-panel-container {
+    max-width: calc(100vw - 24px);
+    max-height: 80vh;
+    overflow: auto;
+  }
 }

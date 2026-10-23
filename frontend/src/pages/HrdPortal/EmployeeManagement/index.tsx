@@ -194,29 +194,29 @@ export default function EmployeeManagement() {
             }}
           >
             <Row gutter={[12, 12]}>
-              <Col span={8}>
+              <Col xs={24} sm={12} lg={8}>
                 <Form.Item name="fullName" label="Nama karyawan">
                   <Input placeholder="Nama karyawan" allowClear />
                 </Form.Item>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} lg={8}>
                 <Form.Item name="email" label="Email">
                   <Input placeholder="Email" allowClear />
                 </Form.Item>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} lg={8}>
                 <Form.Item name="position" label="Posisi">
                   <Input placeholder="Posisi" allowClear />
                 </Form.Item>
               </Col>
             </Row>
             <Row gutter={[12, 12]}>
-              <Col span={8}>
+              <Col xs={24} sm={12} lg={8}>
                 <Form.Item name="phone" label="Nomor Handphone">
                   <Input placeholder="Nomor Handphone" allowClear />
                 </Form.Item>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} lg={8}>
                 <Form.Item name="status" label="Status">
                   <Select
                     options={[
@@ -227,7 +227,7 @@ export default function EmployeeManagement() {
                   />
                 </Form.Item>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} lg={8}>
                 <Form.Item>
                   <Button
                     type="primary"

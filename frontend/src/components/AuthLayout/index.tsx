@@ -13,7 +13,7 @@ const App: React.FC<AuthLayoutProps> = ({ portal = "employee" }) => {
     <Layout style={{ minHeight: "100vh" }}>
       <Sidebar portal={portal} />
       {portal === "hrd" && <AdminNotifications />}
-      <Layout style={{ minHeight: "100vh", marginLeft: 240 }}>
+      <Layout className="portal-content">
         <Outlet />
       </Layout>
     </Layout>
