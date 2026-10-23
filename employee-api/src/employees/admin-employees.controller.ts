@@ -163,7 +163,7 @@ export class AdminEmployeesController {
       throw new ConflictException('Email sudah digunakan');
     }
     try {
-      await this.profileChanges.update(id, changes, 'EMPLOYEE');
+      await this.profileChanges.update(id, changes, 'EMPLOYEE', { notify: false });
     } catch (error) {
       if (
         error instanceof QueryFailedError &&

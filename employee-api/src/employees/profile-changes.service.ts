@@ -18,7 +18,7 @@ export class ProfileChangesService {
     id: string,
     changes: ProfileChanges,
     role?: Employee['role'],
-    options: { requireActive?: boolean; currentPassword?: string } = {},
+    options: { requireActive?: boolean; currentPassword?: string; notify?: boolean } = {},
   ): Promise<{ previousAvatarPath: string | null }> {
     if (changes.password !== undefined && (
       typeof changes.password !== 'string' || changes.password.length < 8 ||
@@ -64,7 +64,7 @@ export class ProfileChangesService {
       if (!Object.keys(updates).length) return { previousAvatarPath: employee.avatarPath };
 
       await manager.update(Employee, { id }, updates);
-      for (const changedField of fields) {
+      for (const changedField of options.notify === false ? [] : fields) {
         await manager.insert(ProfileNotification, {
           eventId: randomUUID(), employeeId: id, changedField, publishedAtUtc: null,
           createdAtUtc: () => 'UTC_TIMESTAMP(3)',
