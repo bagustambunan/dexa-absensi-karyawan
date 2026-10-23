@@ -11,3 +11,12 @@ export type AttendanceFilters = { from?: string; to?: string };
 export type AttendanceFilterValues = {
   dates?: GetProps<typeof DatePicker.RangePicker>["value"];
 };
+
+export type EmployeeProfileData = {
+  id: string;
+  fullName: string;
+  email: string;
+  position: string;
+  phone: string;
+  avatarUrl: string | null;
+};

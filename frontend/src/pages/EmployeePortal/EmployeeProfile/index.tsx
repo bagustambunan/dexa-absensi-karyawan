@@ -1,4 +1,4 @@
-import { InboxOutlined, SaveOutlined } from "@ant-design/icons";
+import { InboxOutlined, SaveOutlined, UserOutlined } from "@ant-design/icons";
 import {
   Alert,
   Avatar,
@@ -17,30 +17,98 @@ import {
 } from "antd";
 import PageWrapper from "../../../components/PageWrapper";
 
-const employee = {
-  name: "Bagus Tambunan",
-  position: "Software Engineer",
-  email: "bagus@mail.com",
-  phoneNumber: "081234567890",
-};
+import { useEffect, useState } from "react";
+import { isAxiosError } from "axios";
+import { employeeApi } from "../../../api/employee-api";
+import type { EmployeeProfileData } from "../type";
 
 function EmployeeProfile() {
+  const [employee, setEmployee] = useState<EmployeeProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [reload, setReload] = useState(0);
+  const [avatarSrc, setAvatarSrc] = useState<string>();
+
+  useEffect(() => {
+    employeeApi
+      .get<EmployeeProfileData>("/api/me")
+      .then(({ data }) => {
+        setEmployee(data);
+        setError("");
+      })
+      .catch((err: unknown) => {
+        setEmployee(null);
+        setError(
+          isAxiosError(err) && err.response?.status === 403
+            ? "Akses ditolak."
+            : "Gagal memuat profil. Silakan coba lagi.",
+        );
+      })
+      .finally(() => setLoading(false));
+  }, [reload]);
+
+  const avatarUrl = employee?.avatarUrl;
+  useEffect(() => {
+    if (!avatarUrl) return;
+    let active = true;
+    let objectUrl: string | undefined;
+    employeeApi
+      .get<Blob>(avatarUrl, { responseType: "blob" })
+      .then(({ data }) => {
+        if (!active) return;
+        objectUrl = URL.createObjectURL(data);
+        setAvatarSrc(objectUrl);
+      })
+      .catch(() => {
+        if (active) setAvatarSrc(undefined);
+      });
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [avatarUrl]);
+
   return (
     <PageWrapper title="Profil Karyawan" subtitle="Lihat profil karyawan.">
+      {error && (
+        <Alert
+          type="error"
+          title={error}
+          showIcon
+          role="alert"
+          action={
+            <Button
+              onClick={() => {
+                setLoading(true);
+                setError("");
+                setReload((value) => value + 1);
+              }}
+            >
+              Coba lagi
+            </Button>
+          }
+        />
+      )}
+
       <Row gutter={[24, 24]}>
         <Col xs={24} xl={14}>
           <Space orientation="vertical" size={24} className="full-width">
-            <Card title="Informasi Karyawan">
+            <Card title="Informasi Karyawan" loading={loading}>
               <Space size="large" align="center">
-                <Avatar size={104}>BT</Avatar>
+                <Avatar
+                  size={104}
+                  src={avatarSrc}
+                  icon={<UserOutlined />}
+                  alt={employee?.fullName}
+                />
                 <Space orientation="vertical" size={4}>
                   <Typography.Title level={3} style={{ margin: 0 }}>
-                    {employee.name}
+                    {employee?.fullName}
                   </Typography.Title>
                   <Typography.Text type="secondary">
-                    {employee.position}
+                    {employee?.position}
                   </Typography.Text>
-                  <Tag color="success">Aktif</Tag>
+                  {employee && <Tag color="success">Aktif</Tag>}
                 </Space>
               </Space>
 
@@ -49,21 +117,21 @@ function EmployeeProfile() {
                 column={{ xs: 1, sm: 2 }}
                 style={{ marginTop: 32 }}
                 items={[
-                  { key: "name", label: "Nama", children: employee.name },
+                  { key: "name", label: "Nama", children: employee?.fullName },
                   {
                     key: "email",
                     label: "Email Perusahaan",
-                    children: employee.email,
+                    children: employee?.email,
                   },
                   {
                     key: "position",
                     label: "Posisi",
-                    children: employee.position,
+                    children: employee?.position,
                   },
                   {
                     key: "phoneNumber",
                     label: "Nomor Handphone",
-                    children: employee.phoneNumber,
+                    children: employee?.phone,
                   },
                 ]}
               />
@@ -104,7 +172,9 @@ function EmployeeProfile() {
             <Card title="Ubah Nomor Handphone">
               <Form
                 layout="vertical"
-                initialValues={{ phoneNumber: employee.phoneNumber }}
+                key={employee?.id}
+                disabled={loading || !employee}
+                initialValues={{ phoneNumber: employee?.phone }}
               >
                 <Form.Item label="Nomor Handphone" name="phoneNumber">
                   <Input />
