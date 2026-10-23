@@ -60,7 +60,7 @@ export default function EmployeeAttendanceSummary() {
   }, [filters, reload, runRequest, cancelRequest]);
 
   return (
-    <PageWrapper title="Summary Absen" subtitle="Lihat riwayat absensi.">
+    <PageWrapper title="Riwayat Absensi" subtitle="Lihat riwayat absensi.">
       <Card>
         <Space orientation="vertical" size={16} style={{ width: "100%" }}>
           {error && (

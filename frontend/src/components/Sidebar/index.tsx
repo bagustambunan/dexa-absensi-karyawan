@@ -49,7 +49,7 @@ const employeeMenuItems: MenuProps["items"] = [
     icon: <BarChartOutlined />,
     label: (
       <Link to={`${EMPLOYEE_PORTAL_PATH}/attendance-summary`}>
-        Summary Absen
+        Riwayat Absensi
       </Link>
     ),
   },
