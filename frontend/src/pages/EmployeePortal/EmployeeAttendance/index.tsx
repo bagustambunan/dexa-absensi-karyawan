@@ -124,13 +124,13 @@ export default function EmployeeAttendance() {
               </Space>
               <Space>
                 <ClockCircleOutlined />
-                <span>{clockFormat.format(now)}</span>
+                <span>{clockFormat.format(now)} WIB</span>
               </Space>
             </Space>
           </Card>
           <div className="grid-2">
             <Card
-              title="Jam Masuk"
+              title="Jam Masuk (WIB)"
               loading={isLoading}
               extra={
                 <Button
@@ -149,7 +149,7 @@ export default function EmployeeAttendance() {
               </span>
             </Card>
             <Card
-              title="Jam Pulang"
+              title="Jam Pulang (WIB)"
               loading={isLoading}
               extra={
                 <Button

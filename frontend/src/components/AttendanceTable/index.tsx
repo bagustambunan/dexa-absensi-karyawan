@@ -26,12 +26,12 @@ export default function AttendanceTable<T extends AttendanceRow>({
         ...extraColumns,
         { title: "Tanggal", dataIndex: "date" },
         {
-          title: "Masuk (WIB)",
+          title: "Jam Masuk (WIB)",
           dataIndex: "checkInAt",
           render: renderDateTime,
         },
         {
-          title: "Pulang (WIB)",
+          title: "Jam Pulang (WIB)",
           dataIndex: "checkOutAt",
           render: renderDateTime,
         },
