@@ -1,3 +1,4 @@
+import { getRequestErrorMessage } from "../../api/request-error";
 import { useState } from "react";
 import { Alert, Button, Card, Form, Input } from "antd";
 import { LoginOutlined } from "@ant-design/icons";
@@ -37,7 +38,10 @@ export default function LoginPage() {
                 : status === 429
                   ? "Terlalu banyak percobaan login. Coba lagi nanti."
                   : !err.response
-                    ? "Tidak dapat menghubungi server. Periksa koneksi dan coba lagi."
+                    ? getRequestErrorMessage(
+                        err,
+                        "Tidak dapat menghubungi server. Periksa koneksi dan coba lagi.",
+                      )
                     : "Server sedang bermasalah. Silakan coba lagi nanti.",
         );
       } else {

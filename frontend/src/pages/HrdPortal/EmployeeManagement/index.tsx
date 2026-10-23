@@ -1,3 +1,4 @@
+import { getRequestErrorMessage } from "../../../api/request-error";
 import { useLatestRequest } from "../../../hooks/useLatestRequest";
 import { useEffect, useState } from "react";
 import {
@@ -97,7 +98,10 @@ export default function EmployeeManagement() {
         setError(
           isAxiosError(err) && err.response?.status === 403
             ? "Akses ditolak."
-            : "Gagal memuat daftar karyawan. Silakan coba lagi.",
+            : getRequestErrorMessage(
+                err,
+                "Gagal memuat daftar karyawan. Silakan coba lagi.",
+              ),
         );
       },
       onFinally: () => {

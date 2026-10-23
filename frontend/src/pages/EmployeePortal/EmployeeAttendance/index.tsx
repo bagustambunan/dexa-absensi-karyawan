@@ -1,3 +1,4 @@
+import { getRequestErrorMessage } from "../../../api/request-error";
 import { useLatestRequest } from "../../../hooks/useLatestRequest";
 import { useEffect, useState } from "react";
 import { Alert, Button, Card, message, Space } from "antd";
@@ -53,7 +54,10 @@ export default function EmployeeAttendance() {
           setError(
             isAxiosError(err) && err.response?.status === 403
               ? "Akses ditolak."
-              : "Gagal memuat status absensi. Silakan coba lagi.",
+              : getRequestErrorMessage(
+                  err,
+                  "Gagal memuat status absensi. Silakan coba lagi.",
+                ),
           );
         },
         onFinally: () => {
@@ -89,7 +93,10 @@ export default function EmployeeAttendance() {
             ? "Absen masuk hari ini belum dilakukan."
             : status === 403
               ? "Akses ditolak."
-              : "Gagal menyimpan absensi. Status akan dimuat ulang.",
+              : getRequestErrorMessage(
+                  err,
+                  "Gagal menyimpan absensi. Status akan dimuat ulang.",
+                ),
       );
     } finally {
       setPending(null);

@@ -3,6 +3,7 @@ import { message } from "antd";
 
 export const employeeApi = axios.create({
   baseURL: import.meta.env.VITE_EMPLOYEE_API_URL,
+  timeout: 15000,
 });
 
 export function getAvatarSrc(avatarUrl?: string | null) {

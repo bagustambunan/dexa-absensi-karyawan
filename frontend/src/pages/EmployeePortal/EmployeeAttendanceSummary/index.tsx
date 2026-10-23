@@ -1,3 +1,4 @@
+import { getRequestErrorMessage } from "../../../api/request-error";
 import { useLatestRequest } from "../../../hooks/useLatestRequest";
 import { useEffect, useState } from "react";
 import { Alert, Button, Card, DatePicker, Form, Space } from "antd";
@@ -44,7 +45,10 @@ export default function EmployeeAttendanceSummary() {
               ? "Akses ditolak."
               : status === 400
                 ? "Rentang tanggal tidak valid."
-                : "Gagal memuat riwayat absensi. Silakan coba lagi.",
+                : getRequestErrorMessage(
+                    err,
+                    "Gagal memuat riwayat absensi. Silakan coba lagi.",
+                  ),
           );
         },
         onFinally: () => {

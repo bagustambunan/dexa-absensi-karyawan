@@ -1,3 +1,4 @@
+import { getRequestErrorMessage } from "../../../api/request-error";
 import { useLatestRequest } from "../../../hooks/useLatestRequest";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
@@ -68,7 +69,10 @@ function EmployeeEditor({ employeeId }: { employeeId?: string }) {
               ? "Karyawan tidak ditemukan."
               : status === 403
                 ? "Akses ditolak."
-                : "Gagal memuat karyawan. Silakan coba lagi.",
+                : getRequestErrorMessage(
+                    err,
+                    "Gagal memuat karyawan. Silakan coba lagi.",
+                  ),
           );
         },
         onFinally: () => {
@@ -120,7 +124,10 @@ function EmployeeEditor({ employeeId }: { employeeId?: string }) {
               ? "Karyawan tidak ditemukan."
               : status === 400
                 ? "Data tidak valid. Periksa kembali isian Anda."
-                : "Gagal menyimpan karyawan. Silakan coba lagi.",
+                : getRequestErrorMessage(
+                    err,
+                    "Gagal menyimpan karyawan. Silakan coba lagi.",
+                  ),
         );
       }
     } finally {
@@ -147,7 +154,10 @@ function EmployeeEditor({ employeeId }: { employeeId?: string }) {
             ? "Akses ditolak."
             : status === 404
               ? "Karyawan tidak ditemukan."
-              : "Gagal menonaktifkan karyawan. Silakan coba lagi.",
+              : getRequestErrorMessage(
+                  err,
+                  "Gagal menonaktifkan karyawan. Silakan coba lagi.",
+                ),
         );
       }
     } finally {

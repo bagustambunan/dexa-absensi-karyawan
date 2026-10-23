@@ -1,3 +1,4 @@
+import { getRequestErrorMessage } from "../../api/request-error";
 import { useLatestRequest } from "../../hooks/useLatestRequest";
 import { InboxOutlined, SaveOutlined, UserOutlined } from "@ant-design/icons";
 import {
@@ -37,7 +38,7 @@ function showSaveError(error: unknown, fallback: string) {
       return;
     }
   }
-  void message.error(fallback);
+  void message.error(getRequestErrorMessage(error, fallback));
 }
 
 function ProfileEditor() {
@@ -74,7 +75,10 @@ function ProfileEditor() {
         setError(
           isAxiosError(err) && err.response?.status === 403
             ? "Akses ditolak."
-            : "Gagal memuat profil. Silakan coba lagi.",
+            : getRequestErrorMessage(
+                err,
+                "Gagal memuat profil. Silakan coba lagi.",
+              ),
         );
       },
       onFinally: () => {

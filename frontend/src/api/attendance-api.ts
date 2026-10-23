@@ -3,6 +3,7 @@ import { message } from "antd";
 
 export const attendanceApi = axios.create({
   baseURL: import.meta.env.VITE_ATTENDANCE_API_URL,
+  timeout: 15000,
 });
 
 attendanceApi.interceptors.request.use((config) => {

@@ -1,3 +1,4 @@
+import { getRequestErrorMessage } from "../../../api/request-error";
 import { useLatestRequest } from "../../../hooks/useLatestRequest";
 import { useEffect, useState } from "react";
 import { SearchOutlined } from "@ant-design/icons";
@@ -56,7 +57,10 @@ export default function AttendanceMonitoring() {
           setError(
             isAxiosError(err) && err.response?.status === 403
               ? "Akses ditolak."
-              : "Gagal memuat data absensi. Silakan coba lagi.",
+              : getRequestErrorMessage(
+                  err,
+                  "Gagal memuat data absensi. Silakan coba lagi.",
+                ),
           );
         },
         onFinally: () => {
@@ -78,7 +82,10 @@ export default function AttendanceMonitoring() {
           setEmployeesError(
             isAxiosError(err) && err.response?.status === 403
               ? "Akses daftar karyawan ditolak. Absensi tetap ditampilkan dengan ID karyawan."
-              : "Gagal memuat daftar karyawan. Absensi tetap ditampilkan dengan ID karyawan.",
+              : getRequestErrorMessage(
+                  err,
+                  "Gagal memuat daftar karyawan. Absensi tetap ditampilkan dengan ID karyawan.",
+                ),
           );
         },
         onFinally: () => {
