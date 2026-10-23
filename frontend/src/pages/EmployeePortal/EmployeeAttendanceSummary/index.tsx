@@ -1,34 +1,25 @@
 import { useEffect, useState } from "react";
-import {
-  Alert,
-  Button,
-  Card,
-  DatePicker,
-  Form,
-  Space,
-  Table,
-  type TableProps,
-} from "antd";
+import { Alert, Button, Card, DatePicker, Form, Space } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import { isAxiosError } from "axios";
 import PageWrapper from "../../../components/PageWrapper";
 import { attendanceApi } from "../../../api/attendance-api";
-import { renderTime } from "../../../utils";
+import { workDateFormat } from "../../../utils";
+import dayjs from "dayjs";
+import AttendanceTable from "../../../components/AttendanceTable";
 import type {
   AttendanceDay,
   AttendanceFilters,
   AttendanceFilterValues,
 } from "../type";
 
-const columns: TableProps<AttendanceDay>["columns"] = [
-  { title: "Tanggal", dataIndex: "date" },
-  { title: "Waktu Masuk", dataIndex: "checkInAt", render: renderTime },
-  { title: "Waktu Pulang", dataIndex: "checkOutAt", render: renderTime },
-];
-
 export default function EmployeeAttendanceSummary() {
   const [attendance, setAttendance] = useState<AttendanceDay[]>([]);
-  const [filters, setFilters] = useState<AttendanceFilters>({});
+  const [initialFilters] = useState(() => {
+    const today = workDateFormat.format(new Date());
+    return { from: `${today.slice(0, 8)}01`, to: today };
+  });
+  const [filters, setFilters] = useState<AttendanceFilters>(initialFilters);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
@@ -81,6 +72,9 @@ export default function EmployeeAttendanceSummary() {
           )}
           <Form<AttendanceFilterValues>
             layout="inline"
+            initialValues={{
+              dates: [dayjs(initialFilters.from), dayjs(initialFilters.to)],
+            }}
             onFinish={(values) => {
               const from = values.dates?.[0];
               const to = values.dates?.[1];
@@ -110,18 +104,12 @@ export default function EmployeeAttendanceSummary() {
               </Button>
             </Form.Item>
           </Form>
-          <Table
-            rowKey="date"
-            dataSource={error ? [] : attendance}
-            columns={columns}
+          <AttendanceTable
+            data={error ? [] : attendance}
             loading={loading}
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: 600 }}
-            locale={{
-              emptyText: error
-                ? "Data tidak tersedia"
-                : "Tidak ada absensi yang ditemukan",
-            }}
+            emptyText={
+              error ? "Data tidak tersedia" : "Tidak ada absensi yang ditemukan"
+            }
           />
         </Space>
       </Card>

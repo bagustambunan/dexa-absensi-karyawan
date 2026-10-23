@@ -9,7 +9,6 @@ import {
   Form,
   Select,
   Space,
-  Table,
   Typography,
   type TableProps,
 } from "antd";
@@ -23,7 +22,7 @@ import type {
   AttendanceMonitoringFormValues,
   Employee,
 } from "../type";
-import { renderTime } from "../../../utils";
+import AttendanceTable from "../../../components/AttendanceTable";
 
 export default function AttendanceMonitoring() {
   const [attendance, setAttendance] = useState<Attendance[]>([]);
@@ -79,7 +78,7 @@ export default function AttendanceMonitoring() {
             </Avatar>
             <Space orientation="vertical" size={0}>
               <Typography.Text strong>
-                {name ?? "Karyawan tidak ditemukan"}
+                {name ?? record.employeeId}
               </Typography.Text>
               <Typography.Text type="secondary">
                 {record.employeeId}
@@ -89,9 +88,6 @@ export default function AttendanceMonitoring() {
         );
       },
     },
-    { title: "Tanggal", dataIndex: "date" },
-    { title: "Masuk", dataIndex: "checkInAt", render: renderTime },
-    { title: "Pulang", dataIndex: "checkOutAt", render: renderTime },
   ];
 
   return (
@@ -159,18 +155,13 @@ export default function AttendanceMonitoring() {
               </Button>
             </Form.Item>
           </Form>
-          <Table
-            rowKey={(record) => `${record.employeeId}-${record.date}`}
-            columns={columns}
-            dataSource={error ? [] : attendance}
+          <AttendanceTable
+            extraColumns={columns}
+            data={error ? [] : attendance}
             loading={loading}
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: 800 }}
-            locale={{
-              emptyText: error
-                ? "Data tidak tersedia"
-                : "Tidak ada absensi yang ditemukan",
-            }}
+            emptyText={
+              error ? "Data tidak tersedia" : "Tidak ada absensi yang ditemukan"
+            }
           />
         </Space>
       </Card>

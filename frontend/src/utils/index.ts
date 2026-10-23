@@ -19,3 +19,9 @@ export const clockFormat = new Intl.DateTimeFormat("en-GB", {
 
 export const renderTime = (value: string | null) =>
   value ? timeFormat.format(new Date(value)) : "—";
+
+export const renderDateTime = (value: string | null) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  return `${workDateFormat.format(date)} ${timeFormat.format(date)}`;
+};
