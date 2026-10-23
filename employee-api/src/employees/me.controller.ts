@@ -1,7 +1,13 @@
 import {
+  BadRequestException,
+  Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
+  Inject,
   NotFoundException,
+  Patch,
   Req,
   StreamableFile,
   UnauthorizedException,
@@ -13,6 +19,7 @@ import { extname } from 'node:path';
 import { Repository } from 'typeorm';
 import { JwtAuthGuard, Roles, type AuthenticatedRequest } from '../auth/jwt-auth.guard.ts';
 import { Employee } from './employee.entity.ts';
+import { ProfileChangesService } from './profile-changes.service.ts';
 
 @Controller('me')
 @UseGuards(JwtAuthGuard)
@@ -21,6 +28,8 @@ export class MeController {
   constructor(
     @InjectRepository(Employee)
     private readonly employees: Repository<Employee>,
+    @Inject(ProfileChangesService)
+    private readonly profileChanges: ProfileChangesService,
   ) {}
 
   private async activeEmployee(id: string) {
@@ -46,6 +55,55 @@ export class MeController {
       phone: employee.phone,
       avatarUrl: employee.avatarPath ? '/api/me/avatar' : null,
     };
+  }
+
+  @Patch('phone')
+  async updatePhone(@Req() request: AuthenticatedRequest, @Body() body: unknown) {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      throw new BadRequestException('Data nomor HP tidak valid');
+    }
+    const input = body as Record<string, unknown>;
+    if (
+      Object.keys(input).some((key) => key !== 'phone') ||
+      typeof input.phone !== 'string' ||
+      !/^\+?[0-9]{8,15}$/.test(input.phone.trim())
+    ) {
+      throw new BadRequestException('phone wajib berisi 8–15 digit, boleh diawali +');
+    }
+    await this.profileChanges.update(
+      request.user.sub,
+      { phone: input.phone.trim() },
+      'EMPLOYEE',
+      { requireActive: true },
+    );
+    return this.me(request);
+  }
+
+  @Patch('password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async updatePassword(
+    @Req() request: AuthenticatedRequest,
+    @Body() body: unknown,
+  ): Promise<void> {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      throw new BadRequestException('Data password tidak valid');
+    }
+    const input = body as Record<string, unknown>;
+    if (
+      Object.keys(input).some((key) => key !== 'currentPassword' && key !== 'newPassword') ||
+      typeof input.currentPassword !== 'string' ||
+      !input.currentPassword ||
+      Buffer.byteLength(input.currentPassword, 'utf8') > 72 ||
+      typeof input.newPassword !== 'string'
+    ) {
+      throw new BadRequestException('currentPassword dan newPassword wajib diisi, maksimal 72 byte');
+    }
+    await this.profileChanges.update(
+      request.user.sub,
+      { password: input.newPassword },
+      'EMPLOYEE',
+      { requireActive: true, currentPassword: input.currentPassword },
+    );
   }
 
   @Get('avatar')

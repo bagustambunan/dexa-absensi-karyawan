@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { compare, hash } from 'bcrypt';
@@ -14,7 +14,12 @@ export type ProfileChanges = Partial<
 export class ProfileChangesService {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
-  async update(id: string, changes: ProfileChanges, role?: Employee['role']): Promise<void> {
+  async update(
+    id: string,
+    changes: ProfileChanges,
+    role?: Employee['role'],
+    options: { requireActive?: boolean; currentPassword?: string } = {},
+  ): Promise<void> {
     if (changes.password !== undefined && (
       typeof changes.password !== 'string' || changes.password.length < 8 ||
       Buffer.byteLength(changes.password, 'utf8') > 72
@@ -24,10 +29,24 @@ export class ProfileChangesService {
 
     await this.dataSource.transaction(async (manager) => {
       const employee = await manager.findOne(Employee, {
-        where: { id, ...(role === undefined ? {} : { role }) },
+        where: {
+          id,
+          ...(role === undefined ? {} : { role }),
+          ...(options.requireActive ? { isActive: true } : {}),
+        },
         lock: { mode: 'pessimistic_write' },
       });
-      if (!employee) throw new NotFoundException('Karyawan tidak ditemukan');
+      if (!employee) {
+        if (options.requireActive) throw new UnauthorizedException('Akun tidak aktif atau tidak tersedia');
+        throw new NotFoundException('Karyawan tidak ditemukan');
+      }
+
+      if (
+        options.currentPassword !== undefined &&
+        !(await compare(options.currentPassword, employee.passwordHash))
+      ) {
+        throw new BadRequestException('Password saat ini tidak sesuai');
+      }
 
       const updates: Partial<Employee> = {};
       const fields: ProfileNotification['changedField'][] = [];
