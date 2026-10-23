@@ -1,6 +1,6 @@
 import { getRequestErrorMessage } from "../../../api/request-error";
 import { useLatestRequest } from "../../../hooks/useLatestRequest";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, Button, Card, message, Space } from "antd";
 import { isAxiosError } from "axios";
 import {
@@ -8,6 +8,7 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   LogoutOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import PageWrapper from "../../../components/PageWrapper";
 import { attendanceApi } from "../../../api/attendance-api";
@@ -28,6 +29,23 @@ export default function EmployeeAttendance() {
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
   const [pending, setPending] = useState<"check-in" | "check-out" | null>(null);
+
+  const refreshAttendance = useCallback(() => {
+    if (pending) return;
+    setNow(new Date());
+    setLoading(true);
+    setError("");
+    setReload((value) => value + 1);
+  }, [pending]);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (!document.hidden) refreshAttendance();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [refreshAttendance]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
@@ -109,6 +127,16 @@ export default function EmployeeAttendance() {
     <PageWrapper
       title="Absen"
       subtitle="Catat waktu masuk dan pulang untuk hari ini."
+      extra={
+        <Button
+          icon={<ReloadOutlined />}
+          loading={isLoading}
+          disabled={pending !== null}
+          onClick={refreshAttendance}
+        >
+          Muat Ulang Status
+        </Button>
+      }
     >
       <Card>
         <Space orientation="vertical" size={16} style={{ width: "100%" }}>
@@ -118,17 +146,7 @@ export default function EmployeeAttendance() {
               title={error}
               showIcon
               role="alert"
-              action={
-                <Button
-                  onClick={() => {
-                    setLoading(true);
-                    setError("");
-                    setReload((value) => value + 1);
-                  }}
-                >
-                  Coba lagi
-                </Button>
-              }
+              action={<Button onClick={refreshAttendance}>Coba lagi</Button>}
             />
           )}
           <Card title="Hari Ini">
@@ -143,6 +161,27 @@ export default function EmployeeAttendance() {
               </Space>
             </Space>
           </Card>
+          {!isLoading && !error && !pending && (
+            <Alert
+              type={current?.checkOutAt ? "success" : "info"}
+              showIcon
+              role="status"
+              title={
+                current?.checkOutAt
+                  ? "Sudah absen pulang"
+                  : current?.checkInAt
+                    ? "Sedang bekerja"
+                    : "Belum absen masuk"
+              }
+              description={
+                current?.checkOutAt
+                  ? "Absen masuk dan pulang hari ini sudah tercatat."
+                  : current?.checkInAt
+                    ? "Absen masuk sudah tercatat."
+                    : "Anda belum absen masuk hari ini."
+              }
+            />
+          )}
           <div className="grid-2">
             <Card
               title="Jam Masuk (WIB)"
