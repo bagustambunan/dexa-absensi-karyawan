@@ -23,6 +23,7 @@ import { EmployeesModule } from './employees/employees.module.ts';
         username: config.getOrThrow<string>('MYSQL_USER'),
         password: config.getOrThrow<string>('MYSQL_PASSWORD'),
         database: config.getOrThrow<string>('EMPLOYEE_DB_NAME'),
+        timezone: 'Z',
         autoLoadEntities: true,
         synchronize: false,
       }),

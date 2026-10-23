@@ -67,6 +67,7 @@ export class ProfileChangesService {
       for (const changedField of fields) {
         await manager.insert(ProfileNotification, {
           eventId: randomUUID(), employeeId: id, changedField, publishedAtUtc: null,
+          createdAtUtc: () => 'UTC_TIMESTAMP(3)',
         });
       }
     });
