@@ -3,23 +3,30 @@ import {
   Body,
   Controller,
   Get,
+  FileTypeValidator,
   HttpCode,
   HttpStatus,
   Inject,
   NotFoundException,
   Patch,
+  ParseFilePipe,
+  Post,
   Req,
-  StreamableFile,
   UnauthorizedException,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { open } from 'node:fs/promises';
-import { extname } from 'node:path';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { mkdir, unlink, writeFile } from 'node:fs/promises';
+import { basename, join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
 import { JwtAuthGuard, Roles, type AuthenticatedRequest } from '../auth/jwt-auth.guard.ts';
 import { Employee } from './employee.entity.ts';
 import { ProfileChangesService } from './profile-changes.service.ts';
+import { avatarUrl, readAvatarFile, uploadDirectory } from './avatar-files.ts';
 
 @Controller('me')
 @UseGuards(JwtAuthGuard)
@@ -53,7 +60,7 @@ export class MeController {
       email: employee.email,
       position: employee.position,
       phone: employee.phone,
-      avatarUrl: employee.avatarPath ? '/api/me/avatar' : null,
+      avatarUrl: employee.avatarPath ? avatarUrl(employee.avatarPath) : null,
     };
   }
 
@@ -106,21 +113,45 @@ export class MeController {
     );
   }
 
+  @Post('avatar')
+  @UseInterceptors(FileInterceptor('file', {
+    limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 0 },
+  }))
+  async uploadAvatar(
+    @Req() request: AuthenticatedRequest,
+    @UploadedFile(new ParseFilePipe({
+      validators: [new FileTypeValidator({
+        fileType: /^image\/(jpeg|png|webp)$/,
+        overrideMimeType: true,
+        errorMessage: 'File harus berisi gambar JPEG, PNG, atau WebP',
+      })],
+    })) file: { buffer: Buffer; mimetype: string },
+  ) {
+    await this.activeEmployee(request.user.sub);
+    const extension = file.mimetype === 'image/jpeg' ? 'jpg' : file.mimetype.slice(6);
+    const fileName = `${randomUUID()}.${extension}`;
+    const directory = uploadDirectory();
+    await mkdir(directory, { recursive: true });
+    const path = join(directory, fileName);
+    await writeFile(path, file.buffer, { flag: 'wx' });
+    try {
+      await this.profileChanges.update(
+        request.user.sub,
+        { avatarPath: fileName },
+        'EMPLOYEE',
+        { requireActive: true },
+      );
+    } catch (error) {
+      await unlink(path);
+      throw error;
+    }
+    return { avatarUrl: avatarUrl(fileName) };
+  }
+
   @Get('avatar')
   async avatar(@Req() request: AuthenticatedRequest) {
     const employee = await this.activeEmployee(request.user.sub);
     if (!employee.avatarPath) throw new NotFoundException('Foto tidak tersedia');
-    const types: Record<string, string> = {
-      '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
-      '.webp': 'image/webp', '.gif': 'image/gif',
-    };
-    const type = types[extname(employee.avatarPath).toLowerCase()];
-    if (!type) throw new NotFoundException('Foto tidak tersedia');
-    try {
-      const file = await open(employee.avatarPath, 'r');
-      return new StreamableFile(file.createReadStream(), { type });
-    } catch {
-      throw new NotFoundException('Foto tidak tersedia');
-    }
+    return readAvatarFile(basename(employee.avatarPath));
   }
 }

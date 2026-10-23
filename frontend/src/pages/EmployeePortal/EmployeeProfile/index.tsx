@@ -9,12 +9,14 @@ import {
   Flex,
   Form,
   Input,
+  Image,
   Row,
   Space,
   Tag,
   Typography,
   Upload,
   message,
+  type UploadFile,
 } from "antd";
 import PageWrapper from "../../../components/PageWrapper";
 
@@ -43,8 +45,18 @@ function EmployeeProfile() {
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
   const [avatarSrc, setAvatarSrc] = useState<string>();
-  const [pending, setPending] = useState<"phone" | "password" | null>(null);
+  const [photo, setPhoto] = useState<UploadFile | null>(null);
+  const [pending, setPending] = useState<
+    "phone" | "password" | "avatar" | null
+  >(null);
   const disabled = loading || !employee || pending !== null;
+  const previewUrl = photo?.thumbUrl;
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   useEffect(() => {
     employeeApi
@@ -85,6 +97,28 @@ function EmployeeProfile() {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [avatarUrl]);
+
+  async function saveAvatar() {
+    if (disabled || !photo?.originFileObj) return;
+    setPending("avatar");
+    const body = new FormData();
+    body.append("file", photo.originFileObj);
+    try {
+      await employeeApi.post("/api/me/avatar", body);
+      setPhoto(null);
+      void message.success("Foto berhasil disimpan.");
+      setLoading(true);
+      setReload((value) => value + 1);
+    } catch (error: unknown) {
+      if (isAxiosError(error) && error.response?.status === 413) {
+        void message.error("Ukuran foto maksimal 2 MB.");
+      } else {
+        showSaveError(error, "Gagal menyimpan foto. Silakan coba lagi.");
+      }
+    } finally {
+      setPending(null);
+    }
+  }
 
   async function savePhone(values: { phoneNumber: string }) {
     if (disabled) return;
@@ -202,7 +236,30 @@ function EmployeeProfile() {
             <Card title="Ganti Foto">
               <Upload.Dragger
                 accept=".jpg,.jpeg,.png,.webp"
-                beforeUpload={() => false}
+                disabled={disabled}
+                fileList={photo ? [photo] : []}
+                beforeUpload={(file) => {
+                  if (
+                    !["image/jpeg", "image/png", "image/webp"].includes(
+                      file.type,
+                    )
+                  ) {
+                    void message.error("Pilih foto JPEG, PNG, atau WebP.");
+                    return Upload.LIST_IGNORE;
+                  }
+                  if (file.size > 2 * 1024 * 1024) {
+                    void message.error("Ukuran foto maksimal 2 MB.");
+                    return Upload.LIST_IGNORE;
+                  }
+                  setPhoto({
+                    uid: file.uid,
+                    name: file.name,
+                    originFileObj: file,
+                    thumbUrl: URL.createObjectURL(file),
+                  });
+                  return false;
+                }}
+                onRemove={() => setPhoto(null)}
                 maxCount={1}
               >
                 <InboxOutlined style={{ fontSize: 32 }} />
@@ -213,8 +270,19 @@ function EmployeeProfile() {
                   Format: JPG, PNG, WebP. Ukuran maksimal 2 MB
                 </Typography.Text>
               </Upload.Dragger>
+              {previewUrl && (
+                <div style={{ marginTop: 16 }}>
+                  <Image width={160} src={previewUrl} alt="Preview foto baru" />
+                </div>
+              )}
               <Flex justify="flex-end" style={{ marginTop: 16 }}>
-                <Button type="primary" icon={<SaveOutlined />}>
+                <Button
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  disabled={disabled || !photo}
+                  loading={pending === "avatar"}
+                  onClick={() => void saveAvatar()}
+                >
                   Simpan Foto
                 </Button>
               </Flex>

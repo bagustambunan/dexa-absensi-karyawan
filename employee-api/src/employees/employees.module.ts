@@ -6,10 +6,11 @@ import { AdminEmployeesController } from './admin-employees.controller.ts';
 import { ProfileNotification } from '../notifications/profile-notification.entity.ts';
 import { ProfileChangesService } from './profile-changes.service.ts';
 import { MeController } from './me.controller.ts';
+import { UploadsController } from './uploads.controller.ts';
 
 @Module({
   imports: [AuthModule, TypeOrmModule.forFeature([Employee, ProfileNotification])],
-  controllers: [AdminEmployeesController, MeController],
+  controllers: [AdminEmployeesController, MeController, UploadsController],
   providers: [ProfileChangesService],
   exports: [ProfileChangesService],
 })
