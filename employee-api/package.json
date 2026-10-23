@@ -7,6 +7,7 @@
   "license": "UNLICENSED",
   "type": "module",
   "scripts": {
+    "migration:run": "node --loader ts-node/esm ./node_modules/typeorm/cli.js migration:run -d src/database/employee.data-source.ts",
     "build": "nest build",
     "deploy": "nest deploy",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

@@ -2,11 +2,11 @@ import 'reflect-metadata';
 import { config } from 'dotenv';
 import { resolve } from 'node:path';
 import { DataSource } from 'typeorm';
-import { Employee } from './employees/employee.entity.ts';
-import { ProfileNotification } from './notifications/profile-notification.entity.ts';
+import { Employee } from '../employees/employee.entity.ts';
+import { ProfileNotification } from '../notifications/profile-notification.entity.ts';
 
 config({
-  path: resolve(import.meta.dirname, '../../.env'),
+  path: resolve(import.meta.dirname, '../../../.env'),
 });
 
 export default new DataSource({
@@ -19,7 +19,7 @@ export default new DataSource({
   timezone: 'Z',
   entities: [Employee, ProfileNotification],
   migrations: [
-    resolve(import.meta.dirname, '../migrations/*{.ts,.js}'),
+    resolve(import.meta.dirname, '../../migrations/employee/*{.ts,.js}'),
   ],
   synchronize: false,
 });
