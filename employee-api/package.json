@@ -9,6 +9,7 @@
   "scripts": {
     "migration:run": "node --loader ts-node/esm ./node_modules/typeorm/cli.js migration:run -d src/database/employee.data-source.ts",
     "migration:audit": "node --loader ts-node/esm ./node_modules/typeorm/cli.js migration:run -d src/database/audit.data-source.ts",
+    "seed": "node scripts/seed.mjs",
     "smoke:rabbitmq": "node scripts/rabbitmq-smoke.mjs",
     "build": "nest build",
     "deploy": "nest deploy",
